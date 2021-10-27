@@ -29,11 +29,5 @@ class Integrations(Magics):
         return line, cell
 
 
-# In order to actually use these magics, you must register them in Jupyter with a running IPython:
-# %load_ext streamingcli.jupyter.integrations
-#
-# Then, to install it in local jypyter kernel, call:
-#
-# python -m pip install -e file:///Users/kalondar/projects/streaming-labs/streaming-cli
 def load_ipython_extension(ipython):
     ipython.register_magics(Integrations)
