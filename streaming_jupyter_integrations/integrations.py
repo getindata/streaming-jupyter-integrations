@@ -1,10 +1,13 @@
 from __future__ import print_function
 
+import signal
+
 from IPython.core.magic import (
     Magics, magics_class, line_magic,
     cell_magic
 )
 from IPython.core.magic_arguments import argument, parse_argstring, magic_arguments
+from py4j.protocol import Py4JJavaError
 from pyflink.common import Configuration
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway
@@ -30,20 +33,56 @@ class Integrations(Magics):
                                                     .new_instance()
                                                     .in_streaming_mode()
                                                     .build())
+        self.interrupted = False
+        self.polling_ms = 1000
 
     @cell_magic
     def flink_execute_sql(self, line, cell):
-        cell = inline_sql_in_cell(cell)
-        job_client = None
+        # override SIGINT handlers so that they are not propagated
+        # to flink java processes. A copy of the original handler is saved
+        # so that we can restore it later on.
+        # Side note: boolean assignment is atomic in python.
+        self.interrupted = False
+        original_sigint = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, self.__interrupt_execute)
+
         try:
-            execution_result = self.st_env.execute_sql(cell)
+            self.__internal_execute_sql(line, cell)
+        finally:
+            signal.signal(signal.SIGINT, original_sigint)
+
+    # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
+    def __internal_execute_sql(self, line, cell):
+        cell = inline_sql_in_cell(cell)
+        execution_result = self.st_env.execute_sql(cell)
+        successful_execution_msg = 'Execution successful'
+
+        # active polling
+        while not self.interrupted:
+            try:
+                execution_result.wait(self.polling_ms)
+                # if finished then return early even if the user interrupts after this
+                # the actual invocation has already finished
+                print(successful_execution_msg)
+                return
+            except Py4JJavaError as err:
+                # consume timeout error or rethrow any other
+                if 'java.util.concurrent.TimeoutException' not in str(err.java_exception):
+                    raise err
+
+        if self.interrupted:
             job_client = execution_result.get_job_client()
-            execution_result.wait()
-            print('Execution successful')
-        except KeyboardInterrupt:
             if job_client is not None:
-                print('Job cancelled ' + str(job_client.get_job_id()))
+                print(f'Job cancelled {job_client.get_job_id()}')
                 job_client.cancel().result()
+            else:
+                # interrupted and executed a stmt without a proper job (see the underlying execute_sql call)
+                print('Job interrupted')
+            # in either case return early
+            return
+
+        # usual happy path
+        print(successful_execution_msg)
 
     @cell_magic
     def flink_query_sql(self, line, cell):
@@ -69,6 +108,9 @@ class Integrations(Magics):
         udf_obj = shell.user_ns[args.object_name]
         self.st_env.create_temporary_function(function_name, udf_obj)
         print(f'Function {function_name} registered')
+
+    def __interrupt_execute(self, *args):
+        self.interrupted = True
 
 
 def load_ipython_extension(ipython):
