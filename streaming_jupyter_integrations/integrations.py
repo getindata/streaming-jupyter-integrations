@@ -17,6 +17,7 @@ from streamingcli.jupyter.display import display_execution_result
 from streamingcli.jupyter.reflection import get_method_names_for
 from streamingcli.jupyter.sql_syntax_highlighting import SQLSyntaxHighlighting
 from streamingcli.jupyter.sql_utils import inline_sql_in_cell
+from streamingcli.jupyter.variablesubstitution import CellContentFormatter
 
 
 @magics_class
@@ -50,7 +51,8 @@ class Integrations(Magics):
         signal.signal(signal.SIGINT, self.__interrupt_execute)
 
         try:
-            self.__internal_execute_sql(line, cell)
+            enriched_cell = CellContentFormatter(cell, self.shell.user_ns)
+            self.__internal_execute_sql(line, enriched_cell)
         finally:
             signal.signal(signal.SIGINT, original_sigint)
 
