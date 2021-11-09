@@ -14,6 +14,8 @@ from pyflink.java_gateway import get_gateway
 from pyflink.table import StreamTableEnvironment, EnvironmentSettings
 
 from streamingcli.jupyter.display import display_execution_result
+from streamingcli.jupyter.reflection import get_method_names_for
+from streamingcli.jupyter.sql_syntax_highlighting import SQLSyntaxHighlighting
 from streamingcli.jupyter.sql_utils import inline_sql_in_cell
 
 
@@ -35,6 +37,7 @@ class Integrations(Magics):
                                                     .build())
         self.interrupted = False
         self.polling_ms = 1000
+        Integrations.__enable_sql_syntax_highlighting()
 
     @cell_magic
     def flink_execute_sql(self, line, cell):
@@ -108,6 +111,12 @@ class Integrations(Magics):
         udf_obj = shell.user_ns[args.object_name]
         self.st_env.create_temporary_function(function_name, udf_obj)
         print(f'Function {function_name} registered')
+
+    @staticmethod
+    def __enable_sql_syntax_highlighting():
+        methods_decorated_with_cell_magic = get_method_names_for(Integrations, 'cell_magic')
+        sql_highlighting = SQLSyntaxHighlighting(methods_decorated_with_cell_magic)
+        sql_highlighting.add_syntax_highlighting_js()
 
     def __interrupt_execute(self, *args):
         self.interrupted = True
