@@ -51,7 +51,7 @@ class Integrations(Magics):
         signal.signal(signal.SIGINT, self.__interrupt_execute)
 
         try:
-            enriched_cell = CellContentFormatter(cell, self.shell.user_ns)
+            enriched_cell = CellContentFormatter(cell, self.shell.user_ns).substitute_user_variables()
             self.__internal_execute_sql(line, enriched_cell)
         finally:
             signal.signal(signal.SIGINT, original_sigint)
@@ -92,8 +92,9 @@ class Integrations(Magics):
     @cell_magic
     def flink_query_sql(self, line, cell):
         cell = inline_sql_in_cell(cell)
+        enriched_cell = CellContentFormatter(cell, self.shell.user_ns).substitute_user_variables()
         try:
-            execution_result = self.st_env.execute_sql(cell)
+            execution_result = self.st_env.execute_sql(enriched_cell)
             display_execution_result(execution_result)
         except KeyboardInterrupt:
             print('Query cancelled')
