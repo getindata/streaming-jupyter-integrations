@@ -61,7 +61,6 @@ class CellContentFormatter(string.Formatter):
 
     @staticmethod
     def _prepare_escaped_variables(input_text):
-        # string.format() replaces our "{{{{" with "{{" later during substitution
         return input_text.replace("{{", "{").replace("}}", "}").replace("{ ", "{").replace(" }", "}")
 
     def _substitute_variables(self, escaped_string):
