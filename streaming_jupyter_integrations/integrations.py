@@ -17,7 +17,7 @@ from streamingcli.jupyter.display import display_execution_result
 from streamingcli.jupyter.reflection import get_method_names_for
 from streamingcli.jupyter.sql_syntax_highlighting import SQLSyntaxHighlighting
 from streamingcli.jupyter.sql_utils import inline_sql_in_cell
-from streamingcli.jupyter.variablesubstitution import CellContentFormatter
+from streamingcli.jupyter.variable_substitution import CellContentFormatter
 
 
 @magics_class
