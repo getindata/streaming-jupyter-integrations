@@ -7,6 +7,7 @@ from IPython.core.magic import (
     cell_magic
 )
 from IPython.core.magic_arguments import argument, parse_argstring, magic_arguments
+from jupyter_core.paths import jupyter_config_dir
 from py4j.protocol import Py4JJavaError
 from pyflink.common import Configuration
 from pyflink.datastream import StreamExecutionEnvironment
@@ -118,7 +119,7 @@ class Integrations(Magics):
     @staticmethod
     def __enable_sql_syntax_highlighting():
         methods_decorated_with_cell_magic = get_method_names_for(Integrations, 'cell_magic')
-        sql_highlighting = SQLSyntaxHighlighting(methods_decorated_with_cell_magic)
+        sql_highlighting = SQLSyntaxHighlighting(methods_decorated_with_cell_magic, jupyter_config_dir())
         sql_highlighting.add_syntax_highlighting_js()
 
     def __interrupt_execute(self, *args):

@@ -1,12 +1,9 @@
 import os.path
 
-from jupyter_core.paths import jupyter_config_dir
-
 
 class SQLSyntaxHighlighting:
-    def __init__(self, magic_names: [str]):
-        self.jupyter_dir = jupyter_config_dir()
-        self.custom_js_path = os.path.join(self.jupyter_dir, 'custom', 'custom.js')
+    def __init__(self, magic_names: [str], jupyter_dir):
+        self.custom_js_path = os.path.join(jupyter_dir, 'custom', 'custom.js')
         self.magic_names = magic_names
 
     def add_syntax_highlighting_js(self):
