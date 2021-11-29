@@ -15,7 +15,8 @@ import autopep8
 @dataclass
 class ConvertedNotebook:
     content: str
-    jars: list = field(default_factory=lambda: [])
+    remote_jars: list = field(default_factory=lambda: [])
+    local_jars: list = field(default_factory=lambda: [])
 
 
 @dataclass
@@ -134,5 +135,9 @@ class NotebookConverter:
         flink_app_script = Environment().from_string(flink_app_template).render(
             notebook_entries=notebook_entries
         )
-        jars = map(lambda entry: entry.url, filter(lambda entry: isinstance(entry, RegisterJar), notebook_entries))
-        return ConvertedNotebook(content=autopep8.fix_code(flink_app_script), jars=list(jars))
+        remote_jars = map(lambda entry: entry.url,
+                          filter(lambda entry: isinstance(entry, RegisterJar), notebook_entries))
+        local_jars = map(lambda entry: entry.local_path,
+                         filter(lambda entry: isinstance(entry, RegisterLocalJar), notebook_entries))
+        return ConvertedNotebook(content=autopep8.fix_code(flink_app_script), remote_jars=list(remote_jars),
+                                 local_jars=list(local_jars))
