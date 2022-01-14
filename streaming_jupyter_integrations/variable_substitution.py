@@ -23,15 +23,20 @@ def _match_backwards(full_string, match, complimentary_regexp):
 # each ambiguous regexp has a corresponding (closing expression, directed matcher) tuple
 # for a reverse search the reverse regexp is also reversed
 ambiguous_regexps = {
-    "\{\{\S": ("[^\}]*\}", _match_forwards),  # any two left braces followed by a non-whitespace character
-    "\S\}\}": ("[^\{]*\{", _match_backwards),  # any non-whitespace character followed by two braces
-    "\{\s+\{": ("[^\}]*\}", _match_forwards),  # catch some attempted nesting cases
-    "\}\s+\}": ("[^\{]*\{", _match_backwards)  # catch some attempted nesting cases
+    r"\{\{\S": (
+        r"[^\}]*\}",
+        _match_forwards,
+    ),  # any two left braces followed by a non-whitespace character
+    r"\S\}\}": (
+        r"[^\{]*\{",
+        _match_backwards,
+    ),  # any non-whitespace character followed by two braces
+    r"\{\s+\{": (r"[^\}]*\}", _match_forwards),  # catch some attempted nesting cases
+    r"\}\s+\}": (r"[^\{]*\{", _match_backwards),  # catch some attempted nesting cases
 }
 
 
 class CellContentFormatter(string.Formatter):
-
     def __init__(self, input_string, user_ns):
         self.input_string = input_string
         self.user_ns = user_ns
@@ -39,9 +44,12 @@ class CellContentFormatter(string.Formatter):
     def substitute_user_variables(self):
         ambiguous_syntax = self._get_ambiguous_syntax(self.input_string)
         if ambiguous_syntax:
-            raise VariableSyntaxException(ambiguous_syntax,
-                                          message="Found the string {}, which is ambiguous or invalid."
-                                          .format(ambiguous_syntax))
+            raise VariableSyntaxException(
+                ambiguous_syntax,
+                message="Found the string {}, which is ambiguous or invalid.".format(
+                    ambiguous_syntax
+                ),
+            )
         escaped_string = self._prepare_escaped_variables(self.input_string)
         return self._substitute_variables(escaped_string)
 
@@ -61,16 +69,24 @@ class CellContentFormatter(string.Formatter):
 
     @staticmethod
     def _prepare_escaped_variables(input_text):
-        return input_text.replace("{{", "{").replace("}}", "}").replace("{ ", "{").replace(" }", "}")
+        return (
+            input_text.replace("{{", "{")
+            .replace("}}", "}")
+            .replace("{ ", "{")
+            .replace(" }", "}")
+        )
 
     def _substitute_variables(self, escaped_string):
         try:
             return escaped_string.format(**self.user_ns)
         except KeyError as error:
-            raise NonExistentVariableException(error.args[0],
-                                               message="The variable {} is not defined but is referenced in the cell."
-                                               .format(error),
-                                               sql=self.input_string)
+            raise NonExistentVariableException(
+                error.args[0],
+                message="The variable {} is not defined but is referenced in the cell.".format(
+                    error
+                ),
+                sql=self.input_string,
+            )
 
 
 class NonExistentVariableException(Exception):
