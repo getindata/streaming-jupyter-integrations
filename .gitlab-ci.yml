@@ -1,0 +1,38 @@
+variables:
+  DOCKER_TAG: "${CI_COMMIT_SHA}"
+  PIPENV_VENV_IN_PROJECT: "true"
+
+stages:
+  - build
+  - test
+
+image: python:3.8
+
+whl:
+  stage: build
+  before_script:
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+  script:
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/*
+
+pytest:
+  stage: test
+  before_script:
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install .[tests]
+  script:
+    - pre-commit run --all-files
+    - python -m pytest --cov streaming_jupyter_integrations --cov-report xml --cov-report term-missing --ignore=venv
+  cache:
+    paths:
+      - venv/*
+  except:
+    - tags
