@@ -29,7 +29,7 @@ class VerifyVersionCommand(install):
     def run(self) -> None:
         tag = os.getenv('CI_COMMIT_TAG')
 
-        if tag != f"v{__version__}":
+        if tag != __version__:
             info = "Git tag: {0} does not match the version of this app: {1}".format(
                 tag, __version__
             )
@@ -66,4 +66,7 @@ setup(
     include_package_data=True,
     install_requires=get_requirements("requirements.txt"),
     extras_require=EXTRA_REQUIRE,
+    cmdclass={
+        'verify': VerifyVersionCommand,
+    }
 )
