@@ -3,6 +3,8 @@ from __future__ import print_function
 import asyncio
 import os
 import signal
+from asyncio import Task
+from typing import Any
 
 import nest_asyncio
 import pandas as pd
@@ -18,7 +20,7 @@ from pyflink.common import Configuration
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway
 from pyflink.table import (EnvironmentSettings, ResultKind,
-                           StreamTableEnvironment)
+                           StreamTableEnvironment, TableResult)
 
 from .config_utils import load_config_file
 from .deployment_bar import DeploymentBar
@@ -32,7 +34,7 @@ from .variable_substitution import CellContentFormatter
 
 @magics_class
 class Integrations(Magics):
-    def __init__(self, shell):
+    def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
         print(
             "Set env variable JAVA_TOOL_OPTIONS="
@@ -54,8 +56,8 @@ class Integrations(Magics):
         self.st_env = StreamTableEnvironment.create(
             stream_execution_environment=self.s_env,
             environment_settings=EnvironmentSettings.new_instance()
-            .in_streaming_mode()
-            .build(),
+                .in_streaming_mode()
+                .build(),
         )
         self.interrupted = False
         self.polling_ms = 100
@@ -74,7 +76,7 @@ class Integrations(Magics):
     @argument(
         "-p", "--path", type=str, help="A path to a local config file", required=True
     )
-    def load_config_file(self, line):
+    def load_config_file(self, line: str) -> None:
         args = parse_argstring(self.load_config_file, line)
         path = args.path
         loaded_variables = load_config_file(path)
@@ -82,7 +84,7 @@ class Integrations(Magics):
         print("Config file loaded")
 
     @cell_magic
-    def flink_execute_sql(self, line, cell):
+    def flink_execute_sql(self, line: str, cell: str) -> None:
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return
@@ -109,7 +111,7 @@ class Integrations(Magics):
             signal.signal(signal.SIGINT, original_sigint)
 
     # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
-    async def __internal_execute_sql(self, _line, cell):
+    async def __internal_execute_sql(self, _line: str, cell: str) -> None:
         signal.signal(signal.SIGINT, self.__interrupt_execute)
         if is_dml(cell) or is_query(cell):
             print(
@@ -142,7 +144,7 @@ class Integrations(Magics):
             except Py4JJavaError as err:
                 # consume timeout error or rethrow any other
                 if "java.util.concurrent.TimeoutException" not in str(
-                    err.java_exception
+                        err.java_exception
                 ):
                     raise err
 
@@ -160,7 +162,7 @@ class Integrations(Magics):
         # usual happy path
         print(successful_execution_msg)
 
-    async def display_execution_result(self, execution_result):
+    async def display_execution_result(self, execution_result: TableResult) -> pd.DataFrame:
         """
         Displays the execution result and returns a dataframe containing all the results.
         Display is done in a stream-like fashion displaying the results as they come.
@@ -216,7 +218,7 @@ class Integrations(Magics):
         help="A path to a remote jar to include in the deployment",
         required=False,
     )
-    def flink_register_jar(self, line):
+    def flink_register_jar(self, line: str) -> None:
         args = parse_argstring(self.flink_register_jar, line)
         local_path = args.local_path
         remote_path = args.remote_path
@@ -246,8 +248,8 @@ class Integrations(Magics):
         pipeline_classpaths = "pipeline.classpaths"
         current_classpaths = (
             self.st_env.get_config()
-            .get_configuration()
-            .get_string(pipeline_classpaths, "")
+                .get_configuration()
+                .get_string(pipeline_classpaths, "")
         )
         new_classpath = (
             f"{current_classpaths};{classpath_to_add}"
@@ -283,7 +285,7 @@ class Integrations(Magics):
         default="python",
         required=False,
     )
-    def flink_register_function(self, line):
+    def flink_register_function(self, line: str) -> None:
         args = parse_argstring(self.flink_register_function, line)
         shell = self.shell
         function_name = args.function_name
@@ -298,7 +300,7 @@ class Integrations(Magics):
         print(f"Function {function_name} registered [{language}]")
 
     @staticmethod
-    def __enable_sql_syntax_highlighting():
+    def __enable_sql_syntax_highlighting() -> None:
         methods_decorated_with_cell_magic = get_method_names_for(
             Integrations, "cell_magic"
         )
@@ -307,10 +309,10 @@ class Integrations(Magics):
         )
         sql_highlighting.add_syntax_highlighting_js()
 
-    def __interrupt_execute(self, *args):
+    def __interrupt_execute(self, *args: Any) -> None:
         self.interrupted = True
 
-    def __handle_done(self, fut):
+    def __handle_done(self, fut: Any) -> None:
         self.background_execution_in_progress = False
         print("Execution done")
         # https://stackoverflow.com/questions/48161387/python-how-to-print-the-stacktrace-of-an-exception-object-without-a-currently
@@ -318,7 +320,7 @@ class Integrations(Magics):
         if fut.exception():
             fut.result()
 
-    def __enrich_cell(self, cell):
+    def __enrich_cell(self, cell: str) -> str:
         enriched_cell = CellContentFormatter(
             cell, self.shell.user_ns
         ).substitute_user_variables()
@@ -326,9 +328,9 @@ class Integrations(Magics):
         return joined_cell
 
     @staticmethod
-    def __retract_user_as_something_is_executing_in_background():
+    def __retract_user_as_something_is_executing_in_background() -> None:
         print("Please wait for the previously submitted task to finish or cancel it.")
 
 
-def load_ipython_extension(ipython):
+def load_ipython_extension(ipython: Any) -> None:
     ipython.register_magics(Integrations)

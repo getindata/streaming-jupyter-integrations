@@ -6,18 +6,18 @@ import wget
 
 
 class JarHandler:
-    def __init__(self, project_root_dir):
+    def __init__(self, project_root_dir: str):
         self.project_root_dir = project_root_dir
         self.project_jars = os.path.join(project_root_dir, "jars")
         self.create_project_jars()
 
-    def local_copy(self, jar_path):
+    def local_copy(self, jar_path: str) -> str:
         if not os.path.exists(jar_path):
             raise ValueError(f"Path {jar_path} does not exist.")
         full_dst = copy2(jar_path, self.project_jars)
         return JarHandler.__prepend_file_protocol(full_dst)
 
-    def create_project_jars(self):
+    def create_project_jars(self) -> None:
         if not os.path.exists(self.project_jars):
             os.makedirs(self.project_jars, exist_ok=True)
         elif not os.path.isdir(self.project_jars):
@@ -26,16 +26,16 @@ class JarHandler:
             )
 
     @staticmethod
-    def __ensure_jar_accessible(remote_path):
+    def __ensure_jar_accessible(remote_path: str) -> None:
         r = requests.head(remote_path, allow_redirects=True)
         if r.status_code != 200:
             raise ValueError(f"Remote path {remote_path} is not accessible")
 
     @staticmethod
-    def __prepend_file_protocol(path):
+    def __prepend_file_protocol(path: str) -> str:
         return f"file://{path}"
 
-    def remote_copy(self, remote_path):
+    def remote_copy(self, remote_path: str) -> str:
         JarHandler.__ensure_jar_accessible(remote_path)
         # Ensure wget overwrites the file. Without removing the current file `wget`
         # by default adds `__{number}` to the name.

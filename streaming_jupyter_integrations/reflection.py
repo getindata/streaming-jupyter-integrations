@@ -1,9 +1,11 @@
 import ast
 import inspect
-from typing import List
+from typing import Any, Dict, List
+
+from _ast import FunctionDef
 
 
-def get_decorators_for_method(class_):
+def get_decorators_for_method(class_: Any) -> Dict[str, List[str]]:
     """
     Gets all methods inside a class.
     Maps all methods inside a class to their corresponding decorators.
@@ -12,18 +14,18 @@ def get_decorators_for_method(class_):
     """
     decorators_for_method = {}
 
-    def visit_ast_node(node):
+    def visit_ast_node(node: FunctionDef) -> Any:
         decorators_for_method[node.name] = [ast.dump(e) for e in node.decorator_list]
 
     visitor_pattern = ast.NodeVisitor()
-    visitor_pattern.visit_FunctionDef = visit_ast_node
+    setattr(visitor_pattern, 'visit_FunctionDef', visit_ast_node)
     visitor_pattern.visit(
         compile(inspect.getsource(class_), "?", "exec", ast.PyCF_ONLY_AST)
     )
     return decorators_for_method
 
 
-def get_method_names_for(class_, decorator_name: str) -> List[str]:
+def get_method_names_for(class_: Any, decorator_name: str) -> List[str]:
     """
     Returns all method names inside a class that are decorated with decorator_name.
     @param class_: A class in which all methods will be filtered to the ones containing the specific decorator.

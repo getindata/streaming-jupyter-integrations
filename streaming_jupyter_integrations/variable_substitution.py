@@ -1,8 +1,9 @@
 import re
 import string
+from typing import Any, Dict, Optional
 
 
-def _match_forwards(full_string, match, complimentary_regexp):
+def _match_forwards(full_string: str, match: Any, complimentary_regexp: str) -> str:
     start_pos = match.start()
     cut_string = full_string[start_pos:]
     full_match = re.match(complimentary_regexp, cut_string)
@@ -11,7 +12,7 @@ def _match_forwards(full_string, match, complimentary_regexp):
     return cut_string
 
 
-def _match_backwards(full_string, match, complimentary_regexp):
+def _match_backwards(full_string: str, match: Any, complimentary_regexp: str) -> str:
     end_pos = match.end()
     cut_string = full_string[:end_pos]
     matching_text = re.match(complimentary_regexp, cut_string[::-1])
@@ -37,11 +38,11 @@ ambiguous_regexps = {
 
 
 class CellContentFormatter(string.Formatter):
-    def __init__(self, input_string, user_ns):
+    def __init__(self, input_string: str, user_ns: Dict[Any, Any]):
         self.input_string = input_string
         self.user_ns = user_ns
 
-    def substitute_user_variables(self):
+    def substitute_user_variables(self) -> str:
         ambiguous_syntax = self._get_ambiguous_syntax(self.input_string)
         if ambiguous_syntax:
             raise VariableSyntaxException(
@@ -54,7 +55,7 @@ class CellContentFormatter(string.Formatter):
         return self._substitute_variables(escaped_string)
 
     @classmethod
-    def _get_ambiguous_syntax(cls, input_text):
+    def _get_ambiguous_syntax(cls, input_text: str) -> Optional[str]:
         for regexp in ambiguous_regexps.keys():
             match = re.search(regexp, input_text)
             if match:
@@ -62,13 +63,13 @@ class CellContentFormatter(string.Formatter):
         return None
 
     @classmethod
-    def _match_help_expression(cls, regexp, full_string, match):
+    def _match_help_expression(cls, regexp: str, full_string: str, match: Any) -> str:
         complimentary_regexp = ambiguous_regexps[regexp][0]
         match_function = ambiguous_regexps[regexp][1]
         return match_function(full_string, match, complimentary_regexp)
 
     @staticmethod
-    def _prepare_escaped_variables(input_text):
+    def _prepare_escaped_variables(input_text: str) -> str:
         return (
             input_text.replace("{{", "{")
             .replace("}}", "}")
@@ -76,7 +77,7 @@ class CellContentFormatter(string.Formatter):
             .replace(" }", "}")
         )
 
-    def _substitute_variables(self, escaped_string):
+    def _substitute_variables(self, escaped_string: str) -> str:
         try:
             return escaped_string.format(**self.user_ns)
         except KeyError as error:
@@ -90,14 +91,14 @@ class CellContentFormatter(string.Formatter):
 
 
 class NonExistentVariableException(Exception):
-    def __init__(self, variable_name, message="", sql=None):
+    def __init__(self, variable_name: str, message: str = "", sql: Optional[str] = None):
         super(NonExistentVariableException, self).__init__(message)
         self.sql = sql
         self.variable_name = variable_name
 
 
 class VariableSyntaxException(Exception):
-    def __init__(self, bad_text, message="", sql=None):
+    def __init__(self, bad_text: str, message: str = "", sql: Optional[str] = None):
         super(VariableSyntaxException, self).__init__(message)
         self.bad_text = bad_text
         self.sql = sql

@@ -1,4 +1,5 @@
 """streaming_jupyter_integrations module."""
+from typing import List
 
 from setuptools import find_packages, setup
 
@@ -6,7 +7,7 @@ with open("README.md") as f:
     README = f.read()
 
 
-def get_requirements(filename):
+def get_requirements(filename: str) -> List[str]:
     with open(filename, "r", encoding="utf-8") as fp:
         reqs = [
             x.strip()

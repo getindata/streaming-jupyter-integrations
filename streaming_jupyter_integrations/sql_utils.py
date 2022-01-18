@@ -1,4 +1,4 @@
-def inline_sql_in_cell(cell_contents) -> str:
+def inline_sql_in_cell(cell_contents: str) -> str:
     """
     Converts cell contents to a single line SQL statement.
     """
