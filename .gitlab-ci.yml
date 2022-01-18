@@ -1,0 +1,57 @@
+stages:
+  - build
+  - test
+  - ship
+
+image: python:3.8
+
+whl:
+  stage: build
+  before_script:
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+  script:
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/*
+
+pytest:
+  stage: test
+  before_script:
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install .[tests]
+  script:
+    - pre-commit run --all-files
+    - python -m pytest --cov streaming_jupyter_integrations --cov-report xml --cov-report term-missing --ignore=venv
+  cache:
+    paths:
+      - venv/*
+  except:
+    - tags
+
+pypi:
+  stage: ship
+  before_script:
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install twine
+  script:
+    - python setup.py verify
+    - TWINE_USERNAME="gitlab-ci-token" TWINE_PASSWORD="${CI_JOB_TOKEN}"
+      twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  after_script:
+    - git checkout main
+    - bump2version patch
+    - git push origin HEAD:main
+  needs:
+    - whl
+  rules:
+    - if: "$CI_COMMIT_TAG"
