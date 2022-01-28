@@ -3,11 +3,12 @@ from __future__ import print_function
 import asyncio
 import os
 import signal
-from asyncio import Task
-from typing import Any
+from functools import wraps
+from typing import Any, Callable, Dict, Iterable, Tuple
 
 import nest_asyncio
 import pandas as pd
+import sqlparse
 from IPython import display
 from IPython.core.display import display as core_display
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
@@ -83,43 +84,81 @@ class Integrations(Magics):
         self.shell.user_ns.update(loaded_variables)
         print("Config file loaded")
 
+    def __interrupt_signal_decorator(method: Callable[..., Any]) -> Callable[..., Any]:
+        @wraps(method)
+        def _impl(self: 'Integrations', *method_args: Tuple[Any], **method_kwargs: Dict[Any, Any]) -> None:
+            self.interrupted = False
+            # override SIGINT handlers so that they are not propagated
+            # to flink java processes. A copy of the original handler is saved
+            # so that we can restore it later on.
+            # Side note: boolean assignment is atomic in python.
+            original_sigint = signal.getsignal(signal.SIGINT)
+            signal.signal(signal.SIGINT, self.__interrupt_execute)
+            try:
+                method(self, *method_args, **method_kwargs)
+            finally:
+                signal.signal(signal.SIGINT, original_sigint)
+        return _impl
+
+    @line_magic
+    @magic_arguments()
+    @argument(
+        "-p", "--path", type=str, help="A path to a local config file", required=True
+    )
+    def flink_execute_sql_file(self, line: str) -> None:
+        if self.background_execution_in_progress:
+            self.__retract_user_as_something_is_executing_in_background()
+            return
+
+        args = parse_argstring(self.flink_execute_sql_file, line)
+        path = args.path
+        with open(path, "r") as f:
+            statements = map(lambda s: self.__enrich_cell(s.rstrip(';')), sqlparse.split(f.read()))
+
+        self.background_execution_in_progress = True
+        self.deployment_bar.show_deployment_bar()
+        try:
+            self.__flink_execute_sql_file_internal(statements)
+        finally:
+            self.background_execution_in_progress = False
+
+    @__interrupt_signal_decorator
+    def __flink_execute_sql_file_internal(self, statements: Iterable[str]) -> None:
+        for stmt in statements:
+            if self.interrupted:
+                break
+            task = self.__internal_execute_sql(stmt)
+            asyncio.run(task)
+
     @cell_magic
     def flink_execute_sql(self, line: str, cell: str) -> None:
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return
 
-        # override SIGINT handlers so that they are not propagated
-        # to flink java processes. A copy of the original handler is saved
-        # so that we can restore it later on.
-        # Side note: boolean assignment is atomic in python.
-        self.interrupted = False
-        original_sigint = signal.getsignal(signal.SIGINT)
-        signal.signal(signal.SIGINT, self.__interrupt_execute)
-        try:
-            cell = self.__enrich_cell(cell)
-            task = self.__internal_execute_sql(line, cell)
-            if is_dml(cell) or is_query(cell):
-                self.deployment_bar.show_deployment_bar()
-                asyncio.create_task(task).add_done_callback(self.__handle_done)
-            else:
-                # if not DML or SELECT then the operation is synchronous
-                # synchronous operations are not interactive, one cannot cancel them
-                # and hence showing the deployment bar does not make sense
-                asyncio.run(task)
-        finally:
-            signal.signal(signal.SIGINT, original_sigint)
+        stmt = self.__enrich_cell(cell)
+        self.__flink_execute_sql_internal(stmt)
 
-    # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
-    async def __internal_execute_sql(self, _line: str, cell: str) -> None:
-        signal.signal(signal.SIGINT, self.__interrupt_execute)
-        if is_dml(cell) or is_query(cell):
+    @__interrupt_signal_decorator
+    def __flink_execute_sql_internal(self, stmt: str) -> None:
+        task = self.__internal_execute_sql(stmt)
+        if is_dml(stmt) or is_query(stmt):
             print(
                 "This job runs in a background, please either wait or interrupt its execution before continuing"
             )
             self.background_execution_in_progress = True
+            self.deployment_bar.show_deployment_bar()
+            asyncio.create_task(task).add_done_callback(self.__handle_done)
+        else:
+            # if not DML or SELECT then the operation is synchronous
+            # synchronous operations are not interactive, one cannot cancel them
+            # and hence showing the deployment bar does not make sense
+            asyncio.run(task)
+
+    # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
+    async def __internal_execute_sql(self, stmt: str) -> None:
         print("Job starting...")
-        execution_result = self.st_env.execute_sql(cell)
+        execution_result = self.st_env.execute_sql(stmt)
         print("Job started")
         successful_execution_msg = "Execution successful"
 
@@ -130,7 +169,7 @@ class Integrations(Magics):
                 # In Jupyter's main execution pool there is only one worker thread.
                 await asyncio.sleep(self.async_wait_s)
                 execution_result.wait(self.polling_ms)
-                if is_query(cell):
+                if is_query(stmt):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
                     print("Pulling query results...")
