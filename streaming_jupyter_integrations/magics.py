@@ -349,6 +349,7 @@ class Integrations(Magics):
         sql_highlighting.add_syntax_highlighting_js()
 
     def __interrupt_execute(self, *args: Any) -> None:
+        print("Job termination in progress...")
         self.interrupted = True
 
     def __handle_done(self, fut: Any) -> None:
