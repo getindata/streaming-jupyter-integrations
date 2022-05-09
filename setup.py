@@ -6,7 +6,7 @@ from typing import List
 from setuptools import find_packages, setup
 from setuptools.command.install import install
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 with open("README.md") as f:
     README = f.read()
@@ -61,7 +61,7 @@ setup(
     keywords="jupyter flink sql ipython",
     author=u"GetInData",
     author_email="office@getindata.com",
-    url="https://gitlab.com/getindata/streaming-labs/streaming-jupyter-integrations",
+    url="https://github.com/getindata/streaming-jupyter-integrations",
     packages=find_packages(exclude=["docs", "tests", "examples"]),
     include_package_data=True,
     install_requires=get_requirements("requirements.txt"),

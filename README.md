@@ -1,3 +1,9 @@
+[![Python Version](https://img.shields.io/badge/python-3.8-blue.svg)](https://github.com/getindata/streaming_jupyter_integrations)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![SemVer](https://img.shields.io/badge/semver-2.0.0-green)](https://semver.org/)
+[![PyPI version](https://badge.fury.io/py/streaming_jupyter_integrations.svg)](https://pypi.org/project/streaming_jupyter_integrations/)
+[![Downloads](https://pepy.tech/badge/streaming_jupyter_integrations)](https://pepy.tech/badge/streaming_jupyter_integrations)
+
 # Streaming Jupyter Integrations
 
 Streaming Jupyter Integrations project includes a set of magics for interactively running `Flink SQL`  jobs in [Jupyter](https://jupyter.org/) Notebooks
