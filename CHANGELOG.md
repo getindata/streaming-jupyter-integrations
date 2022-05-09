@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
-- First release
+## [0.1.3] - 2022-05-09
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/commit/69568421564fc152d277ba190822c8762f52dbd5...HEAD
+-   First release
+
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.3...HEAD
+
+[0.1.3]: https://github.com/getindata/streaming-jupyter-integrations/compare/d9d7c68cfee1b87774459323fd4040295377249d...0.1.3
