@@ -61,7 +61,7 @@ setup(
     keywords="jupyter flink sql ipython",
     author=u"GetInData",
     author_email="office@getindata.com",
-    url="https://gitlab.com/getindata/streaming-labs/streaming-jupyter-integrations",
+    url="https://github.com/getindata/streaming-jupyter-integrations",
     packages=find_packages(exclude=["docs", "tests", "examples"]),
     include_package_data=True,
     install_requires=get_requirements("requirements.txt"),

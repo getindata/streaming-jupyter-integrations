@@ -1,0 +1,36 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup python
+        uses: actions/setup-python@v2.2.1
+        with:
+          python-version: 3.8
+
+      - name: Setup virtualenv
+        run: |
+          python -V
+          python -m pip install pipenv
+          pipenv lock -r > requirements.txt
+
+      - name: Test
+        run: |
+          pip install pipenv
+          pipenv install --dev
+          pipenv run pytest
+
+      - name: Wheel
+        run: |
+          python setup.py sdist
+          
