@@ -11,7 +11,7 @@ Streaming Jupyter Integrations project includes a set of magics for interactivel
 In order to actually use these magics, you must install our PIP package:
 
 ```shell
-python3 -m pip install streaming-jupyter-integrations --extra-index-url https://__token__:<your_personal_token>@gitlab.com/api/v4/projects/32827938/packages/pypi/simple
+python3 -m pip install streaming-jupyter-integrations
 ```
 
 In local development, when streaming-jupyter-integrations repository is checkouted on local machine, you may install the most current version:
