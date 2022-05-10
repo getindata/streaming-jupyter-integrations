@@ -21,16 +21,22 @@ jobs:
       - name: Setup virtualenv
         run: |
           python -V
-          python -m pip install pipenv
-          pipenv lock -r > requirements.txt
+          python -m pip install virtualenv pipdeptree
+          virtualenv venv
+          source venv/bin/activate
+          pip install --upgrade pip
 
-      - name: Test
+      - name: Test pre-commit hooks
         run: |
-          pip install pipenv
-          pipenv install --dev
-          pipenv run pytest
+          pip install .[tests]
+          pip freeze
+          pipdeptree
+          pre-commit run --all-files
+
+      - name: Test with tox
+        run: |
+          tox -e py38
 
       - name: Wheel
         run: |
           python setup.py sdist
-          
