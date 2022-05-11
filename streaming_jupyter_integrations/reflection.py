@@ -1,8 +1,7 @@
 import ast
 import inspect
-from typing import Any, Dict, List
-
 from _ast import FunctionDef
+from typing import Any, Dict, List
 
 
 def get_decorators_for_method(class_: Any) -> Dict[str, List[str]]:
