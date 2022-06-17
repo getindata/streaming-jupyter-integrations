@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.1.6] - 2022-06-17
+
+### Added
+
+-   StreamingEnvironment uses `flink-conf.yaml` properties.
+
 ## [0.1.5] - 2022-05-11
 
 ## [0.1.4] - 2022-05-10
@@ -10,7 +16,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.5...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.6...HEAD
+
+[0.1.6]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.5...0.1.6
 
 [0.1.5]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.4...0.1.5
 
