@@ -7,3 +7,4 @@ py4j
 requests
 wget
 sqlparse
+pyyaml

@@ -3,6 +3,7 @@ from __future__ import print_function
 import asyncio
 import os
 import signal
+import yaml
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, Tuple
 
@@ -46,7 +47,13 @@ class Integrations(Magics):
             "--add-opens=java.base/java.util=ALL-UNNAMED "
             "--add-opens=java.base/java.lang=ALL-UNNAMED"
         )
+        global_conf = self.__read_global_config()
         conf = Configuration()
+        for key, value in global_conf.items():
+            if type(value) is str:
+                conf.set_string(key, value)
+            if type(value) is int:
+                conf.set_integer(key, value)
         conf.set_integer("rest.port", 8099)
         conf.set_integer("parallelism.default", 1)
         self.s_env = StreamExecutionEnvironment(
@@ -370,6 +377,17 @@ class Integrations(Magics):
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
         print("Please wait for the previously submitted task to finish or cancel it.")
+
+    @staticmethod
+    def __read_global_config() -> dict:
+        if "FLINK_HOME" in os.environ:
+            with open(os.path.join(os.environ["FLINK_HOME"], "conf", "flink-conf.yaml"), 'r') as stream:
+                try:
+                    parsed_yaml = yaml.safe_load(stream)
+                    return parsed_yaml
+                except yaml.YAMLError as exc:
+                    print(exc)
+        return {}
 
 
 def load_ipython_extension(ipython: Any) -> None:
