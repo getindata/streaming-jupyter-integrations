@@ -8,3 +8,4 @@ requests
 wget
 sqlparse
 pyyaml
+types-PyYAML
