@@ -3,13 +3,13 @@ from __future__ import print_function
 import asyncio
 import os
 import signal
-import yaml
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, Tuple
 
 import nest_asyncio
 import pandas as pd
 import sqlparse
+import yaml
 from IPython import display
 from IPython.core.display import display as core_display
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
