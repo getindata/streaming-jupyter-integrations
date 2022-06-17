@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- StreamingEnvironment uses `flink-conf.yaml` properties.
+
 ## [0.1.5] - 2022-05-11
 
 ## [0.1.4] - 2022-05-10

@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Iterable, Tuple
 import nest_asyncio
 import pandas as pd
 import sqlparse
+import yaml
 from IPython import display
 from IPython.core.display import display as core_display
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
@@ -46,7 +47,8 @@ class Integrations(Magics):
             "--add-opens=java.base/java.util=ALL-UNNAMED "
             "--add-opens=java.base/java.lang=ALL-UNNAMED"
         )
-        conf = Configuration()
+        global_conf = self.__read_global_config()
+        conf = self.__create_configuration_from_dict(global_conf)
         conf.set_integer("rest.port", 8099)
         conf.set_integer("parallelism.default", 1)
         self.s_env = StreamExecutionEnvironment(
@@ -370,6 +372,38 @@ class Integrations(Magics):
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
         print("Please wait for the previously submitted task to finish or cancel it.")
+
+    @staticmethod
+    def __read_global_config() -> Dict[str, Any]:
+        if "FLINK_HOME" in os.environ:
+            with open(os.path.join(os.environ["FLINK_HOME"], "conf", "flink-conf.yaml"), 'r') as stream:
+                try:
+                    parsed_yaml = yaml.safe_load(stream)
+                    return parsed_yaml
+                except yaml.YAMLError as exc:
+                    print(exc)
+        else:
+            print("FLINK_HOME environment variable is not set, reading flink-conf skipped")
+        return {}
+
+    @staticmethod
+    def __create_configuration_from_dict(new_values: Dict[str, Any]) -> Configuration:
+        configuration = Configuration()
+        for key, value in new_values.items():
+            if type(value) is str:
+                configuration.set_string(key, value)
+            elif type(value) is int:
+                configuration.set_integer(key, value)
+            elif type(value) is float:
+                configuration.set_float(key, value)
+            elif type(value) is bool:
+                configuration.set_boolean(key, value)
+            elif type(value) is bytearray:
+                configuration.set_bytearray(key, value)
+            else:
+                print(f"No setter available for {key}")
+
+        return configuration
 
 
 def load_ipython_extension(ipython: Any) -> None:
