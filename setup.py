@@ -6,7 +6,7 @@ from typing import List
 from setuptools import find_packages, setup
 from setuptools.command.install import install
 
-__version__ = "0.1.6"
+__version__ = "0.2.0"
 
 with open("README.md") as f:
     README = f.read()

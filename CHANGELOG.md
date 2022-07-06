@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2022-07-06
+
 ### Changed
 
-- Update Apache Flink dependency to 1.15.
+-   Update Apache Flink dependency to 1.15.
 
 ## [0.1.6] - 2022-06-17
 
@@ -20,7 +22,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.6...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.2.0...HEAD
+
+[0.2.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.6...0.2.0
 
 [0.1.6]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.1.5...0.1.6
 
