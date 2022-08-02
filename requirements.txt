@@ -1,5 +1,5 @@
 ipywidgets
-apache-flink==1.15.0
+apache-flink==1.15.1
 setuptools
 pandas
 ipython
