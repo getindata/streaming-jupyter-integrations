@@ -6,6 +6,9 @@
 
 - Using init.sql as the initialization script.
 
+### Fixed
+- Make SQL syntax highlighting available in JupyterLab.
+
 ## [0.2.1] - 2022-08-02
 
 ### Changed

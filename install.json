@@ -1,0 +1,5 @@
+{
+  "packageManager": "python",
+  "packageName": "streaming_jupyter_integrations",
+  "uninstallInstructions": "Use your Python package manager (pip, conda, etc.) to uninstall the package streaming_jupyter_integrations"
+}
