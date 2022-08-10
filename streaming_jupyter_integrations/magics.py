@@ -73,6 +73,7 @@ class Integrations(Magics):
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
+        self.__process_init_sql_script()
 
     @line_magic
     @magic_arguments()
@@ -108,21 +109,10 @@ class Integrations(Magics):
         "-p", "--path", type=str, help="A path to a local config file", required=True
     )
     def flink_execute_sql_file(self, line: str) -> None:
-        if self.background_execution_in_progress:
-            self.__retract_user_as_something_is_executing_in_background()
-            return
-
         args = parse_argstring(self.flink_execute_sql_file, line)
         path = args.path
-        with open(path, "r") as f:
-            statements = map(lambda s: self.__enrich_cell(s.rstrip(';')), sqlparse.split(f.read()))
 
-        self.background_execution_in_progress = True
-        self.deployment_bar.show_deployment_bar()
-        try:
-            self.__flink_execute_sql_file_internal(statements)
-        finally:
-            self.background_execution_in_progress = False
+        self.__flink_execute_sql_file(path)
 
     @__interrupt_signal_decorator
     def __flink_execute_sql_file_internal(self, statements: Iterable[str]) -> None:
@@ -368,6 +358,25 @@ class Integrations(Magics):
         ).substitute_user_variables()
         joined_cell = inline_sql_in_cell(enriched_cell)
         return joined_cell
+
+    def __flink_execute_sql_file(self, path: str) -> None:
+        if self.background_execution_in_progress:
+            self.__retract_user_as_something_is_executing_in_background()
+            return
+
+        with open(path, "r") as f:
+            statements = map(lambda s: self.__enrich_cell(s.rstrip(';')), sqlparse.split(f.read()))
+
+        self.background_execution_in_progress = True
+        self.deployment_bar.show_deployment_bar()
+        try:
+            self.__flink_execute_sql_file_internal(statements)
+        finally:
+            self.background_execution_in_progress = False
+
+    def __process_init_sql_script(self) -> None:
+        if "INIT_SQL_SCRIPT_PATH" in os.environ:
+            self.__flink_execute_sql_file(os.environ["INIT_SQL_SCRIPT_PATH"])
 
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
