@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Using init.sql as the initialization script.
+
 ## [0.2.1] - 2022-08-02
 
 ### Changed
