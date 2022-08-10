@@ -73,7 +73,7 @@ class Integrations(Magics):
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
-        self.__process_init_sql_script()
+        self.__flink_execute_sql_file("init.sql")
 
     @line_magic
     @magic_arguments()
@@ -364,8 +364,12 @@ class Integrations(Magics):
             self.__retract_user_as_something_is_executing_in_background()
             return
 
-        with open(path, "r") as f:
-            statements = map(lambda s: self.__enrich_cell(s.rstrip(';')), sqlparse.split(f.read()))
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                statements = map(lambda s: self.__enrich_cell(s.rstrip(';')), sqlparse.split(f.read()))
+        else:
+            print("File {} not found".format(path))
+            return
 
         self.background_execution_in_progress = True
         self.deployment_bar.show_deployment_bar()
@@ -373,10 +377,6 @@ class Integrations(Magics):
             self.__flink_execute_sql_file_internal(statements)
         finally:
             self.background_execution_in_progress = False
-
-    def __process_init_sql_script(self) -> None:
-        if "INIT_SQL_SCRIPT_PATH" in os.environ:
-            self.__flink_execute_sql_file(os.environ["INIT_SQL_SCRIPT_PATH"])
 
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
