@@ -1,10 +1,10 @@
-from __future__ import print_function
+from __future__ import annotations, print_function
 
 import asyncio
 import os
 import signal
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, Tuple
+from typing import Any, Callable, Dict, Iterable, Tuple, Union
 
 import nest_asyncio
 import pandas as pd
@@ -52,15 +52,13 @@ class Integrations(Magics):
         conf.set_integer("rest.port", 8099)
         conf.set_integer("parallelism.default", 1)
         self.s_env = StreamExecutionEnvironment(
-            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(
+            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(  # noqa: E501
                 conf._j_configuration
             )
         )
         self.st_env = StreamTableEnvironment.create(
             stream_execution_environment=self.s_env,
-            environment_settings=EnvironmentSettings.new_instance()
-                .in_streaming_mode()
-                .build(),
+            environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
         )
         self.interrupted = False
         self.polling_ms = 100
@@ -73,6 +71,7 @@ class Integrations(Magics):
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
+        self.__flink_execute_sql_file("init.sql")
 
     @line_magic
     @magic_arguments()
@@ -108,21 +107,12 @@ class Integrations(Magics):
         "-p", "--path", type=str, help="A path to a local config file", required=True
     )
     def flink_execute_sql_file(self, line: str) -> None:
-        if self.background_execution_in_progress:
-            self.__retract_user_as_something_is_executing_in_background()
-            return
-
         args = parse_argstring(self.flink_execute_sql_file, line)
         path = args.path
-        with open(path, "r") as f:
-            statements = map(lambda s: self.__enrich_cell(s.rstrip(';')), sqlparse.split(f.read()))
-
-        self.background_execution_in_progress = True
-        self.deployment_bar.show_deployment_bar()
-        try:
-            self.__flink_execute_sql_file_internal(statements)
-        finally:
-            self.background_execution_in_progress = False
+        if os.path.exists(path):
+            self.__flink_execute_sql_file(path)
+        else:
+            print("File {} not found".format(path))
 
     @__interrupt_signal_decorator
     def __flink_execute_sql_file_internal(self, statements: Iterable[str]) -> None:
@@ -368,6 +358,24 @@ class Integrations(Magics):
         ).substitute_user_variables()
         joined_cell = inline_sql_in_cell(enriched_cell)
         return joined_cell
+
+    def __flink_execute_sql_file(self, path: Union[str, os.PathLike[str]]) -> None:
+        if self.background_execution_in_progress:
+            self.__retract_user_as_something_is_executing_in_background()
+            return
+
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                statements = [self.__enrich_cell(s.rstrip(';')) for s in sqlparse.split(f.read())]
+        else:
+            return
+
+        self.background_execution_in_progress = True
+        self.deployment_bar.show_deployment_bar()
+        try:
+            self.__flink_execute_sql_file_internal(statements)
+        finally:
+            self.background_execution_in_progress = False
 
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
