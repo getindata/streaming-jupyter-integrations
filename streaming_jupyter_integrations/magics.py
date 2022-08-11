@@ -1,4 +1,4 @@
-from __future__ import print_function, annotations
+from __future__ import annotations, print_function
 
 import asyncio
 import os
