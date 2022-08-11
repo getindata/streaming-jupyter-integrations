@@ -38,13 +38,19 @@ eggs/
 .eggs/
 lib/
 lib64/
+node-modules/
+node_modules/
 parts/
 sdist/
 var/
 wheels/
 *.egg-info/
+*.bundle.*
+.eslintcache
 .installed.cfg
 *.egg
+*.tsbuildinfo
+streaming_jupyter_integrations/labextension
 MANIFEST
 
 # PyInstaller

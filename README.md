@@ -8,10 +8,10 @@
 
 Streaming Jupyter Integrations project includes a set of magics for interactively running `Flink SQL`  jobs in [Jupyter](https://jupyter.org/) Notebooks
 
-In order to actually use these magics, you must install our PIP package:
+In order to actually use these magics, you must install our PIP package along `jupyterlab-lsp`:
 
 ```shell
-python3 -m pip install streaming-jupyter-integrations
+python3 -m pip install jupyterlab-lsp streaming-jupyter-integrations
 ```
 
 And then register in Jupyter with a running IPython in the first cell:
@@ -22,13 +22,27 @@ And then register in Jupyter with a running IPython in the first cell:
 
 ## Local development
 
-In local development, when streaming-jupyter-integrations repository is checkouted on local machine, you may install the most current version:
+Note: You will need NodeJS to build the extension package.
 
-```shell
-python3 -m pip install -e .[tests]
+The `jlpm` command is JupyterLab's pinned version of
+[yarn](https://yarnpkg.com/) that is installed with JupyterLab. You may use
+`yarn` or `npm` in lieu of `jlpm` below. In order to use `jlpm`, you have to
+have `jupyterlab` installed (e.g., by `brew install jupyterlab`, if you use
+Homebrew as your package manager).
+
+```bash
+# Clone the repo to your local environment
+# Change directory to the flink_sql_lsp_extension directory
+# Install package in development mode
+pip install -e .
+# Link your development version of the extension with JupyterLab
+jupyter labextension develop . --overwrite
+# Rebuild extension Typescript source after making changes
+jlpm build
 ```
 
-The project uses [pre-commit](https://pre-commit.com/) hooks to ensure code quality, mostly by linting. To use it, [install pre-commit](https://pre-commit.com/#install) and then run
+The project uses [pre-commit](https://pre-commit.com/) hooks to ensure code quality, mostly by linting.
+To use it, [install pre-commit](https://pre-commit.com/#install) and then run
 ```shell
 pre-commit install --install-hooks
 ```
