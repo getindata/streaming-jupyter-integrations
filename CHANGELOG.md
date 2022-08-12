@@ -5,6 +5,7 @@
 ### Added
 
 - Using init.sql as the initialization script.
+- Run plugins on initialization.
 
 ### Fixed
 - Make SQL syntax highlighting available in JupyterLab.
