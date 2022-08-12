@@ -3,6 +3,7 @@ from __future__ import annotations, print_function
 import asyncio
 import os
 import signal
+import sys
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, Tuple, Union
 
@@ -38,6 +39,7 @@ from .variable_substitution import CellContentFormatter
 class Integrations(Magics):
     def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
+        self.__load_plugins()
         print(
             "Set env variable JAVA_TOOL_OPTIONS="
             "'--add-opens=java.base/java.util=ALL-UNNAMED "
@@ -376,6 +378,16 @@ class Integrations(Magics):
             self.__flink_execute_sql_file_internal(statements)
         finally:
             self.background_execution_in_progress = False
+
+    @staticmethod
+    def __load_plugins() -> None:
+        if sys.version_info < (3, 10):
+            from importlib_metadata import entry_points
+        else:
+            from importlib.metadata import entry_points
+        for plugin in entry_points(group='catalog.plugins'):
+            f = plugin.load()
+            f()
 
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
