@@ -39,7 +39,6 @@ from .variable_substitution import CellContentFormatter
 class Integrations(Magics):
     def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
-        self.__load_plugins()
         print(
             "Set env variable JAVA_TOOL_OPTIONS="
             "'--add-opens=java.base/java.util=ALL-UNNAMED "
@@ -62,6 +61,7 @@ class Integrations(Magics):
             stream_execution_environment=self.s_env,
             environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
         )
+        self.__load_plugins()
         self.interrupted = False
         self.polling_ms = 100
         # 20ms
@@ -278,21 +278,7 @@ class Integrations(Magics):
                 "Please specify either a local or remote path, use `%flink_register_jar?` for help."
             )
 
-        pipeline_classpaths = "pipeline.classpaths"
-        current_classpaths = (
-            self.st_env.get_config()
-                .get_configuration()
-                .get_string(pipeline_classpaths, "")
-        )
-        new_classpath = (
-            f"{current_classpaths};{classpath_to_add}"
-            if len(current_classpaths) > 0
-            else classpath_to_add
-        )
-        self.st_env.get_config().get_configuration().set_string(
-            pipeline_classpaths, new_classpath
-        )
-        print(f"Jar {classpath_to_add} registered")
+        self.__extend_classpath(classpath_to_add)
 
     @line_magic
     @magic_arguments()
@@ -379,15 +365,34 @@ class Integrations(Magics):
         finally:
             self.background_execution_in_progress = False
 
-    @staticmethod
-    def __load_plugins() -> None:
+    def __extend_classpath(self, classpath_to_add: str):
+        pipeline_classpaths = "pipeline.classpaths"
+        current_classpaths = (
+            self.st_env.get_config()
+                .get_configuration()
+                .get_string(pipeline_classpaths, "")
+        )
+        new_classpath = (
+            f"{current_classpaths};{classpath_to_add}"
+            if len(current_classpaths) > 0
+            else classpath_to_add
+        )
+        self.st_env.get_config().get_configuration().set_string(
+            pipeline_classpaths, new_classpath
+        )
+        for jar in classpath_to_add.split(";"):
+            print(f"Jar {jar} registered")
+
+    def __load_plugins(self) -> None:
         if sys.version_info < (3, 10):
             from importlib_metadata import entry_points
         else:
             from importlib.metadata import entry_points
-        for plugin in entry_points(group='catalog.plugins'):
-            f = plugin.load()
-            f()
+        for jar_provider in entry_points(group='catalog.jars.provider'):
+            provider_f = jar_provider.load()
+            classpath_to_add = provider_f()
+            if classpath_to_add:
+                self.__extend_classpath(classpath_to_add)
 
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
