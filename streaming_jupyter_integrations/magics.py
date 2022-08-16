@@ -365,7 +365,7 @@ class Integrations(Magics):
         finally:
             self.background_execution_in_progress = False
 
-    def __extend_classpath(self, classpath_to_add: str):
+    def __extend_classpath(self, classpath_to_add: str) -> None:
         pipeline_classpaths = "pipeline.classpaths"
         current_classpaths = (
             self.st_env.get_config()
