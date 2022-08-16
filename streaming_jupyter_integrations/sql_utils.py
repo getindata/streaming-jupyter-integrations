@@ -27,8 +27,7 @@ DQL_KEYWORDS = {
 
 DML_PREFIXES: Dict[str, List[str]] = {
     'INSERT': [],
-    'EXECUTE': ['INSERT'],
-    **{dql: [] for dql in DQL_KEYWORDS}
+    'EXECUTE': ['INSERT']
 }
 
 
@@ -48,17 +47,17 @@ def is_dml(sql: str) -> bool:
         return False
 
     parsed = sqlparse.parse(sql.upper())[0]
-    (first_token_idx, first_token) = parsed.token_next(-1)
+    first_token_idx, first_token = parsed.token_next(-1)
     dml_follow_up = DML_PREFIXES.get(first_token.value)
     if dml_follow_up is None:
         return False
     if len(dml_follow_up) == 0:
         return True
-    (_, next_token) = parsed.token_next(first_token_idx)
+    _, next_token = parsed.token_next(first_token_idx)
     return next_token.value in dml_follow_up
 
 
-def is_query(sql: str) -> bool:
+def is_dql(sql: str) -> bool:
     return __first_token_is_keyword(sql, DQL_KEYWORDS)
 
 

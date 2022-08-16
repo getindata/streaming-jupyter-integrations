@@ -31,7 +31,7 @@ from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import inline_sql_in_cell, is_dml, is_query
+from .sql_utils import inline_sql_in_cell, is_dml, is_dql
 from .variable_substitution import CellContentFormatter
 
 
@@ -136,7 +136,7 @@ class Integrations(Magics):
     @__interrupt_signal_decorator
     def __flink_execute_sql_internal(self, stmt: str) -> None:
         task = self.__internal_execute_sql(stmt)
-        if is_dml(stmt):
+        if is_dml(stmt) or is_dql(stmt):
             print(
                 "This job runs in a background, please either wait or interrupt its execution before continuing"
             )
@@ -163,7 +163,7 @@ class Integrations(Magics):
                 # In Jupyter's main execution pool there is only one worker thread.
                 await asyncio.sleep(self.async_wait_s)
                 execution_result.wait(self.polling_ms)
-                if is_query(stmt):
+                if is_dql(stmt):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
                     print("Pulling query results...")

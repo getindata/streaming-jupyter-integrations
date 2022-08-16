@@ -1,6 +1,6 @@
 import unittest
 
-from streaming_jupyter_integrations.sql_utils import is_ddl, is_dml, is_query
+from streaming_jupyter_integrations.sql_utils import is_ddl, is_dml, is_dql
 
 
 # Some of the following examples are taken from Flink SQL documentation
@@ -8,9 +8,9 @@ from streaming_jupyter_integrations.sql_utils import is_ddl, is_dml, is_query
 class TestSqlUtils(unittest.TestCase):
     def test_simple_select(self):
         simple_select = "   SELECT   * FROM\n\n  myTable\n\t WHERE   someField\r = \r\nsomeOtherField \n\n "
-        assert not is_ddl(simple_select)
-        assert is_dml(simple_select)
-        assert is_query(simple_select)
+        self.assertFalse(is_ddl(simple_select))
+        self.assertFalse(is_dml(simple_select))
+        self.assertTrue(is_dql(simple_select))
 
     def test_select_hints(self):
         select = """select * from
@@ -19,30 +19,30 @@ class TestSqlUtils(unittest.TestCase):
     kafka_table2 /*+ OPTIONS('scan.startup.mode'='earliest-offset') */ t2
     on t1.id = t2.id;
         """
-        assert not is_ddl(select)
-        assert is_dml(select)
-        assert is_query(select)
+        self.assertFalse(is_ddl(select))
+        self.assertFalse(is_dml(select))
+        self.assertTrue(is_dql(select))
 
     def test_with_query(self):
         with_query = "WITH orders_with_total AS (\n    " \
                      "SELECT order_id, price + tax AS total\n    " \
                      "FROM Orders\n)\nSELECT order_id, SUM(total)\n" \
                      "FROM orders_with_total\nGROUP BY order_id;"
-        assert not is_ddl(with_query)
-        assert is_dml(with_query)
-        assert is_query(with_query)
+        self.assertFalse(is_ddl(with_query))
+        self.assertFalse(is_dml(with_query))
+        self.assertTrue(is_dql(with_query))
 
     def test_select_distinct(self):
         select = "SELECT DISTINCT id FROM Orders"
-        assert not is_ddl(select)
-        assert is_dml(select)
-        assert is_query(select)
+        self.assertFalse(is_ddl(select))
+        self.assertFalse(is_dml(select))
+        self.assertTrue(is_dql(select))
 
     def test_select_values(self):
         select = "SELECT order_id, price FROM (VALUES (1, 2.0), (2, 3.1))  AS t (order_id, price)"
-        assert not is_ddl(select)
-        assert is_dml(select)
-        assert is_query(select)
+        self.assertFalse(is_ddl(select))
+        self.assertFalse(is_dml(select))
+        self.assertTrue(is_dql(select))
 
     def test_select_cumulate(self):
         select = """SELECT * FROM TABLE(
@@ -51,9 +51,9 @@ class TestSqlUtils(unittest.TestCase):
       TIMECOL => DESCRIPTOR(bidtime),
       STEP => INTERVAL '2' MINUTES,
       SIZE => INTERVAL '10' MINUTES));"""
-        assert not is_ddl(select)
-        assert is_dml(select)
-        assert is_query(select)
+        self.assertFalse(is_ddl(select))
+        self.assertFalse(is_dml(select))
+        self.assertTrue(is_dql(select))
 
     def test_select_window_aggregation(self):
         select = """SELECT
@@ -63,9 +63,9 @@ class TestSqlUtils(unittest.TestCase):
 GROUP BY
   TUMBLE(order_time, INTERVAL '1' DAY),
   user"""
-        assert not is_ddl(select)
-        assert is_dml(select)
-        assert is_query(select)
+        self.assertFalse(is_ddl(select))
+        self.assertFalse(is_dml(select))
+        self.assertTrue(is_dql(select))
 
     def test_select_over_aggregation(self):
         select = """SELECT order_id, order_time, amount,
@@ -76,157 +76,157 @@ GROUP BY
           PARTITION BY product
           ORDER BY order_time
           RANGE BETWEEN INTERVAL '1' HOUR PRECEDING AND CURRENT ROW)"""
-        assert not is_ddl(select)
-        assert is_dml(select)
-        assert is_query(select)
+        self.assertFalse(is_ddl(select))
+        self.assertFalse(is_dml(select))
+        self.assertTrue(is_dql(select))
 
     def test_create_table(self):
         create = "CREATE TABLE Orders (`user` BIGINT, product STRING, amount INT) WITH ('connector'='raw');"
-        assert is_ddl(create)
-        assert not is_dml(create)
-        assert not is_query(create)
+        self.assertTrue(is_ddl(create))
+        self.assertFalse(is_dml(create))
+        self.assertFalse(is_dql(create))
 
         create_not_exist = "\n\nCREATE TABLE IF NOT EXISTS " \
                            "Catalog.Orders (`user` BIGINT, product STRING, " \
                            "amount INT) LIKE source_table (EXCLUDING PARTITIONS)"
-        assert is_ddl(create_not_exist)
-        assert not is_dml(create_not_exist)
-        assert not is_query(create_not_exist)
+        self.assertTrue(is_ddl(create_not_exist))
+        self.assertFalse(is_dml(create_not_exist))
+        self.assertFalse(is_dql(create_not_exist))
 
     def test_create_catalog(self):
         create = "CREATE CATALOG Catalog WITH (key1  =  val1)"
-        assert is_ddl(create)
-        assert not is_dml(create)
-        assert not is_query(create)
+        self.assertTrue(is_ddl(create))
+        self.assertFalse(is_dml(create))
+        self.assertFalse(is_dql(create))
 
     def test_create_database(self):
         create = "CREATE DATABASE Catalog.Database WITH ('key1'  =  'val1')"
-        assert is_ddl(create)
-        assert not is_dml(create)
-        assert not is_query(create)
+        self.assertTrue(is_ddl(create))
+        self.assertFalse(is_dml(create))
+        self.assertFalse(is_dql(create))
 
     def test_create_view(self):
         create = "CREATE TEMPORARY VIEW IF NOT EXISTS MyView " \
                  "(`column1`, `index`, `column2`) AS (SELECT column1, index, column5 FROM someTable);"
-        assert is_ddl(create)
-        assert not is_dml(create)
-        assert not is_query(create)
+        self.assertTrue(is_ddl(create))
+        self.assertFalse(is_dml(create))
+        self.assertFalse(is_dql(create))
 
     def test_create_function(self):
         create = "CREATE FUNCTION MyFunction AS pyflink.table.tests.test_udf.add LANGUAGE PYTHON"
-        assert is_ddl(create)
-        assert not is_dml(create)
-        assert not is_query(create)
+        self.assertTrue(is_ddl(create))
+        self.assertFalse(is_dml(create))
+        self.assertFalse(is_dql(create))
 
     def test_drop_table(self):
         drop = "  DROP\n TABLE \n\rOrders"
-        assert is_ddl(drop)
-        assert not is_dml(drop)
-        assert not is_query(drop)
+        self.assertTrue(is_ddl(drop))
+        self.assertFalse(is_dml(drop))
+        self.assertFalse(is_dql(drop))
 
     def test_drop_catalog(self):
         drop = "  DROP\n CATALOG IF EXISTS \n\rCatalog"
-        assert is_ddl(drop)
-        assert not is_dml(drop)
-        assert not is_query(drop)
+        self.assertTrue(is_ddl(drop))
+        self.assertFalse(is_dml(drop))
+        self.assertFalse(is_dql(drop))
 
     def test_drop_database(self):
         drop = "\n\nDROP DATABASE Production\n\nCASCADE\n\n"
-        assert is_ddl(drop)
-        assert not is_dml(drop)
-        assert not is_query(drop)
+        self.assertTrue(is_ddl(drop))
+        self.assertFalse(is_dml(drop))
+        self.assertFalse(is_dql(drop))
 
     def test_drop_view(self):
         drop = "DROP VIEW Catalog.Database.View"
-        assert is_ddl(drop)
-        assert not is_dml(drop)
-        assert not is_query(drop)
+        self.assertTrue(is_ddl(drop))
+        self.assertFalse(is_dml(drop))
+        self.assertFalse(is_dql(drop))
 
     def test_drop_function(self):
         drop = "DROP FUNCTION Function"
-        assert is_ddl(drop)
-        assert not is_dml(drop)
-        assert not is_query(drop)
+        self.assertTrue(is_ddl(drop))
+        self.assertFalse(is_dml(drop))
+        self.assertFalse(is_dql(drop))
 
     def test_alter_table(self):
         alter = "ALTER TABLE Orders RENAME TO Chaoses"
-        assert is_ddl(alter)
-        assert not is_dml(alter)
-        assert not is_query(alter)
+        self.assertTrue(is_ddl(alter))
+        self.assertFalse(is_dml(alter))
+        self.assertFalse(is_dql(alter))
 
         alter_properties = "ALTER TABLE Orders SET (\n  'connector' = 'other_connector'\n);"
-        assert is_ddl(alter_properties)
-        assert not is_dml(alter_properties)
-        assert not is_query(alter_properties)
+        self.assertTrue(is_ddl(alter_properties))
+        self.assertFalse(is_dml(alter_properties))
+        self.assertFalse(is_dql(alter_properties))
 
     def test_alter_view(self):
         alter = "ALTER VIEW MyView RENAME TO YourView"
-        assert is_ddl(alter)
-        assert not is_dml(alter)
-        assert not is_query(alter)
+        self.assertTrue(is_ddl(alter))
+        self.assertFalse(is_dml(alter))
+        self.assertFalse(is_dql(alter))
 
         alter_expression = "ALTER VIEW MyView AS (VALUES (1, 2, 3))"
-        assert is_ddl(alter_expression)
-        assert not is_dml(alter_expression)
-        assert not is_query(alter_expression)
+        self.assertTrue(is_ddl(alter_expression))
+        self.assertFalse(is_dml(alter_expression))
+        self.assertFalse(is_dql(alter_expression))
 
     def test_alter_database(self):
         alter = "ALTER DATABASE Production SET ('key1' = 'val2', 'key2' = 'val1'\r\t)"
-        assert is_ddl(alter)
-        assert not is_dml(alter)
-        assert not is_query(alter)
+        self.assertTrue(is_ddl(alter))
+        self.assertFalse(is_dml(alter))
+        self.assertFalse(is_dql(alter))
 
     def test_alter_function(self):
         alter = "ALTER FUNCTION AddFunction AS pyflink.table.tests.test_udf.sub"
-        assert is_ddl(alter)
-        assert not is_dml(alter)
-        assert not is_query(alter)
+        self.assertTrue(is_ddl(alter))
+        self.assertFalse(is_dml(alter))
+        self.assertFalse(is_dql(alter))
 
     def test_insert_from_select(self):
         insert = "INSERT INTO country_page_view " \
                  "PARTITION (date='2019-8-30', country='China')\n  " \
                  "SELECT user, cnt FROM page_view_source;"
-        assert not is_ddl(insert)
-        assert is_dml(insert)
-        assert not is_query(insert)
+        self.assertFalse(is_ddl(insert))
+        self.assertTrue(is_dml(insert))
+        self.assertFalse(is_dql(insert))
 
         execute_insert = "EXECUTE  INSERT INTO country_page_view " \
                          "PARTITION (date='2019-8-30', country='China')\n  " \
                          "SELECT user, cnt FROM page_view_source;"
-        assert not is_ddl(execute_insert)
-        assert is_dml(execute_insert)
-        assert not is_query(execute_insert)
+        self.assertFalse(is_ddl(execute_insert))
+        self.assertTrue(is_dml(execute_insert))
+        self.assertFalse(is_dql(execute_insert))
 
         insert_overwrite_partition = "INSERT OVERWRITE country_page_view " \
                                      "PARTITION (date='2019-8-30')  \n  " \
                                      "SELECT user, cnt, country FROM page_view_source;"
-        assert not is_ddl(insert_overwrite_partition)
-        assert is_dml(insert_overwrite_partition)
-        assert not is_query(insert_overwrite_partition)
+        self.assertFalse(is_ddl(insert_overwrite_partition))
+        self.assertTrue(is_dml(insert_overwrite_partition))
+        self.assertFalse(is_dql(insert_overwrite_partition))
 
         insert_append = "INSERT INTO country_page_view " \
                         "PARTITION (date='2019-8-30', country='China') (user)  " \
                         "SELECT user FROM page_view_source"
-        assert not is_ddl(insert_append)
-        assert is_dml(insert_append)
-        assert not is_query(insert_append)
+        self.assertFalse(is_ddl(insert_append))
+        self.assertTrue(is_dml(insert_append))
+        self.assertFalse(is_dql(insert_append))
 
     def test_insert_values(self):
         insert = "INSERT INTO students\n  VALUES ('fred flintstone', 35, 1.28), ('barney rubble', 32, 2.32)"
-        assert not is_ddl(insert)
-        assert is_dml(insert)
-        assert not is_query(insert)
+        self.assertFalse(is_ddl(insert))
+        self.assertTrue(is_dml(insert))
+        self.assertFalse(is_dql(insert))
 
     def test_describe(self):
         describe = "DESCRIBE Orders"
-        assert not is_ddl(describe)
-        assert is_dml(describe)
-        assert is_query(describe)
+        self.assertFalse(is_ddl(describe))
+        self.assertFalse(is_dml(describe))
+        self.assertTrue(is_dql(describe))
 
         desc = "DESC Database.Orders;"
-        assert not is_ddl(desc)
-        assert is_dml(desc)
-        assert is_query(desc)
+        self.assertFalse(is_ddl(desc))
+        self.assertFalse(is_dml(desc))
+        self.assertTrue(is_dql(desc))
 
     def test_explain(self):
         explain = """
@@ -235,9 +235,9 @@ GROUP BY
         UNION ALL
         SELECT `count`, word FROM MyTable2
         """
-        assert not is_ddl(explain)
-        assert is_dml(explain)
-        assert is_query(explain)
+        self.assertFalse(is_ddl(explain))
+        self.assertFalse(is_dml(explain))
+        self.assertTrue(is_dql(explain))
 
     def test_use(self):
         uses = [
@@ -249,7 +249,7 @@ GROUP BY
             with self.subTest(sql=use):
                 self.assertTrue(is_ddl(use))
                 self.assertFalse(is_dml(use))
-                self.assertFalse(is_query(use))
+                self.assertFalse(is_dql(use))
 
     def test_show_catalogs(self):
         shows = [
@@ -275,17 +275,17 @@ GROUP BY
         for show in shows:
             with self.subTest(sql=show):
                 self.assertFalse(is_ddl(show))
-                self.assertTrue(is_dml(show))
-                self.assertTrue(is_query(show))
+                self.assertFalse(is_dml(show))
+                self.assertTrue(is_dql(show))
 
     def test_load(self):
         load = "LOAD MODULE hive WITH ('hive-version' = '3.1.2')\n"
         self.assertTrue(is_ddl(load))
         self.assertFalse(is_dml(load))
-        self.assertFalse(is_query(load))
+        self.assertFalse(is_dql(load))
 
     def test_unload(self):
         unload = "UNLOAD MODULE core"
         self.assertTrue(is_ddl(unload))
         self.assertFalse(is_dml(unload))
-        self.assertFalse(is_query(unload))
+        self.assertFalse(is_dql(unload))
