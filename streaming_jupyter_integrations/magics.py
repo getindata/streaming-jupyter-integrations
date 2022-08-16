@@ -136,7 +136,7 @@ class Integrations(Magics):
     @__interrupt_signal_decorator
     def __flink_execute_sql_internal(self, stmt: str) -> None:
         task = self.__internal_execute_sql(stmt)
-        if is_dml(stmt) or is_query(stmt):
+        if is_dml(stmt):
             print(
                 "This job runs in a background, please either wait or interrupt its execution before continuing"
             )
