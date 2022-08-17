@@ -9,6 +9,7 @@
 
 ### Fixed
 - Make SQL syntax highlighting available in JupyterLab.
+- Make Magics recognize _DESCRIBE_ and _SHOW_ keywords as queries.
 
 ## [0.2.1] - 2022-08-02
 
