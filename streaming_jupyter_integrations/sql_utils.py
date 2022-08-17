@@ -1,4 +1,3 @@
-import re
 from typing import Iterable
 
 import sqlparse
@@ -26,14 +25,10 @@ DQL_KEYWORDS = {
     'SHOW'
 }
 
-DML_KEYWORDS = [
-    ["INSERT"],
-    ["EXECUTE", "INSERT"]
-]
-
-DML_PREFIX_REGEX = re.compile(
-    r"^\s*(" + "|".join([r"\s+".join(keywords) for keywords in DML_KEYWORDS]) + ")"
-)
+DML_KEYWORDS = {
+    "INSERT",
+    "EXECUTE"
+}
 
 
 def inline_sql_in_cell(cell_contents: str) -> str:
@@ -48,10 +43,7 @@ def is_ddl(sql: str) -> bool:
 
 
 def is_dml(sql: str) -> bool:
-    if not sql or not sql.strip():
-        return False
-
-    return DML_PREFIX_REGEX.match(sql) is not None
+    return __first_token_is_keyword(sql, DML_KEYWORDS)
 
 
 def is_dql(sql: str) -> bool:
