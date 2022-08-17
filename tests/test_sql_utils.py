@@ -197,6 +197,13 @@ GROUP BY
         self.assertTrue(is_dml(execute_insert))
         self.assertFalse(is_dql(execute_insert))
 
+        execute_insert_newline = "EXECUTE \n\n\r\t\n INSERT INTO country_page_view\n\t " \
+                                 "PARTITION (date='2019-8-30', country='China')\n  " \
+                                 "SELECT user, cnt FROM page_view_source;"
+        self.assertFalse(is_ddl(execute_insert_newline))
+        self.assertTrue(is_dml(execute_insert_newline))
+        self.assertFalse(is_dql(execute_insert_newline))
+
         insert_overwrite_partition = "INSERT OVERWRITE country_page_view " \
                                      "PARTITION (date='2019-8-30')  \n  " \
                                      "SELECT user, cnt, country FROM page_view_source;"
@@ -289,3 +296,9 @@ GROUP BY
         self.assertTrue(is_ddl(unload))
         self.assertFalse(is_dml(unload))
         self.assertFalse(is_dql(unload))
+
+    def test_non_match(self):
+        non_match = "  UNKNOWNABLEKEYWORD * FROM (SELECT * FROM SomeTable)"
+        self.assertFalse(is_ddl(non_match))
+        self.assertFalse(is_dml(non_match))
+        self.assertFalse(is_dql(non_match))
