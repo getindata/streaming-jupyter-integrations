@@ -1,10 +1,11 @@
-from __future__ import print_function
+from __future__ import annotations, print_function
 
 import asyncio
 import os
 import signal
+import sys
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, Tuple
+from typing import Any, Callable, Dict, Iterable, Tuple, Union
 
 import nest_asyncio
 import pandas as pd
@@ -30,7 +31,7 @@ from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import inline_sql_in_cell, is_dml, is_query
+from .sql_utils import inline_sql_in_cell, is_dml, is_dql
 from .variable_substitution import CellContentFormatter
 
 
@@ -52,16 +53,15 @@ class Integrations(Magics):
         conf.set_integer("rest.port", 8099)
         conf.set_integer("parallelism.default", 1)
         self.s_env = StreamExecutionEnvironment(
-            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(
+            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(  # noqa: E501
                 conf._j_configuration
             )
         )
         self.st_env = StreamTableEnvironment.create(
             stream_execution_environment=self.s_env,
-            environment_settings=EnvironmentSettings.new_instance()
-                .in_streaming_mode()
-                .build(),
+            environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
         )
+        self.__load_plugins()
         self.interrupted = False
         self.polling_ms = 100
         # 20ms
@@ -73,6 +73,7 @@ class Integrations(Magics):
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
+        self.__flink_execute_sql_file("init.sql")
 
     @line_magic
     @magic_arguments()
@@ -108,21 +109,12 @@ class Integrations(Magics):
         "-p", "--path", type=str, help="A path to a local config file", required=True
     )
     def flink_execute_sql_file(self, line: str) -> None:
-        if self.background_execution_in_progress:
-            self.__retract_user_as_something_is_executing_in_background()
-            return
-
         args = parse_argstring(self.flink_execute_sql_file, line)
         path = args.path
-        with open(path, "r") as f:
-            statements = map(lambda s: self.__enrich_cell(s.rstrip(';')), sqlparse.split(f.read()))
-
-        self.background_execution_in_progress = True
-        self.deployment_bar.show_deployment_bar()
-        try:
-            self.__flink_execute_sql_file_internal(statements)
-        finally:
-            self.background_execution_in_progress = False
+        if os.path.exists(path):
+            self.__flink_execute_sql_file(path)
+        else:
+            print("File {} not found".format(path))
 
     @__interrupt_signal_decorator
     def __flink_execute_sql_file_internal(self, statements: Iterable[str]) -> None:
@@ -144,7 +136,7 @@ class Integrations(Magics):
     @__interrupt_signal_decorator
     def __flink_execute_sql_internal(self, stmt: str) -> None:
         task = self.__internal_execute_sql(stmt)
-        if is_dml(stmt) or is_query(stmt):
+        if is_dml(stmt) or is_dql(stmt):
             print(
                 "This job runs in a background, please either wait or interrupt its execution before continuing"
             )
@@ -171,7 +163,7 @@ class Integrations(Magics):
                 # In Jupyter's main execution pool there is only one worker thread.
                 await asyncio.sleep(self.async_wait_s)
                 execution_result.wait(self.polling_ms)
-                if is_query(stmt):
+                if is_dql(stmt):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
                     print("Pulling query results...")
@@ -286,21 +278,7 @@ class Integrations(Magics):
                 "Please specify either a local or remote path, use `%flink_register_jar?` for help."
             )
 
-        pipeline_classpaths = "pipeline.classpaths"
-        current_classpaths = (
-            self.st_env.get_config()
-                .get_configuration()
-                .get_string(pipeline_classpaths, "")
-        )
-        new_classpath = (
-            f"{current_classpaths};{classpath_to_add}"
-            if len(current_classpaths) > 0
-            else classpath_to_add
-        )
-        self.st_env.get_config().get_configuration().set_string(
-            pipeline_classpaths, new_classpath
-        )
-        print(f"Jar {classpath_to_add} registered")
+        self.__extend_classpath(classpath_to_add)
 
     @line_magic
     @magic_arguments()
@@ -368,6 +346,53 @@ class Integrations(Magics):
         ).substitute_user_variables()
         joined_cell = inline_sql_in_cell(enriched_cell)
         return joined_cell
+
+    def __flink_execute_sql_file(self, path: Union[str, os.PathLike[str]]) -> None:
+        if self.background_execution_in_progress:
+            self.__retract_user_as_something_is_executing_in_background()
+            return
+
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                statements = [self.__enrich_cell(s.rstrip(';')) for s in sqlparse.split(f.read())]
+        else:
+            return
+
+        self.background_execution_in_progress = True
+        self.deployment_bar.show_deployment_bar()
+        try:
+            self.__flink_execute_sql_file_internal(statements)
+        finally:
+            self.background_execution_in_progress = False
+
+    def __extend_classpath(self, classpath_to_add: str) -> None:
+        pipeline_classpaths = "pipeline.classpaths"
+        current_classpaths = (
+            self.st_env.get_config()
+                .get_configuration()
+                .get_string(pipeline_classpaths, "")
+        )
+        new_classpath = (
+            f"{current_classpaths};{classpath_to_add}"
+            if len(current_classpaths) > 0
+            else classpath_to_add
+        )
+        self.st_env.get_config().get_configuration().set_string(
+            pipeline_classpaths, new_classpath
+        )
+        for jar in classpath_to_add.split(";"):
+            print(f"Jar {jar} registered")
+
+    def __load_plugins(self) -> None:
+        if sys.version_info < (3, 10):
+            from importlib_metadata import entry_points
+        else:
+            from importlib.metadata import entry_points
+        for jar_provider in entry_points(group='catalog.jars.provider'):
+            provider_f = jar_provider.load()
+            classpath_to_add = provider_f()
+            if classpath_to_add:
+                self.__extend_classpath(classpath_to_add)
 
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:

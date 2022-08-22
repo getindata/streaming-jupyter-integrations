@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2022-08-22
+
+### Added
+
+-   Using init.sql as the initialization script.
+-   Use plugin to run jar providers on initialization.
+
+### Fixed
+
+-   Make SQL syntax highlighting available in JupyterLab.
+-   Make Magics recognize _DESCRIBE_ and _SHOW_ keywords as queries.
+
 ## [0.2.1] - 2022-08-02
 
 ### Changed
@@ -28,7 +40,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.2.1...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.3.0...HEAD
+
+[0.3.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.2.1...0.3.0
 
 [0.2.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.2.0...0.2.1
 
