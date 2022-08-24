@@ -213,6 +213,7 @@ class Integrations(Magics):
                 print("Execution result will bind to `execution_result` variable.")
                 rows_counter = IntText(value=0, description="Loaded rows: ")
                 core_display(rows_counter)
+                display_handle = None
                 for result in results:
                     # Explicit await for the same reason as in `__internal_execute_sql`
                     await asyncio.sleep(self.async_wait_s)
@@ -220,6 +221,10 @@ class Integrations(Magics):
                     a_series = pd.Series(res, index=df.columns)
                     df = df.append(a_series, ignore_index=True)
                     rows_counter.value += 1
+                    if display_handle is None:
+                        display_handle = display.display(df, display_id=True)
+                    else:
+                        display_handle.update(df)
 
                     if self.interrupted:
                         print("Query interrupted")
@@ -229,10 +234,9 @@ class Integrations(Magics):
                 [pyflink_result_kind_to_string(result_kind)], index=df.columns
             )
             df = df.append(series, ignore_index=True)
+            display.display(df)
 
-        display.display(df)
         self.shell.user_ns["execution_result"] = df
-
         return df
 
     @line_magic

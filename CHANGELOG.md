@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Make Jupyter update DataFrame with the data polled by Flink in real time.
+
 ## [0.3.0] - 2022-08-22
 
 ### Added
