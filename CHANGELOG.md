@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-08-25
+
+### Fixed
+
+-   Make Jupyter update DataFrame with the data polled by Flink in real time.
+
 ## [0.3.0] - 2022-08-22
 
 ### Added
@@ -40,7 +46,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.4.0...HEAD
+
+[0.4.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.3.0...0.4.0
 
 [0.3.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.2.1...0.3.0
 
