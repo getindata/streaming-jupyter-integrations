@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Use `getpass` to read variables marked with `${VARIABLE_NAME}` from user input.
+
 ## [0.4.0] - 2022-08-25
 
 ### Fixed

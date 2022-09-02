@@ -37,7 +37,7 @@ repos:
         - 'types-PyYAML'
 
 -   repo: https://github.com/pre-commit/mirrors-eslint
-    rev: 'v8.21.0'
+    rev: 'v8.23.0'
     hooks:
     -   id: eslint
         files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
