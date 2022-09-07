@@ -23,16 +23,22 @@ class TestCellContentFormatter:
 
     def test_hidden_variable_enrichments(self):
         """
-        Test Jupyter cell input text enrichment with both variables defined in
-        IPython kernel and get by getpass method
+        Test Jupyter cell input text enrichment with variables defined in
+        IPython kernel and got by getpass method.
+
+        This test uses the same variable name (`some_variable`) to check and
+        ensure that: (1) when `${}` is present, it gets precedence over already
+        defined variables; and (2) variables read using getpass do not mess up
+        IPython kernel namespace.
         """
 
         cell_input_text_prefix = "create table {{ some_table_name }} (\n  id INT\n) WITH " \
                                  "(\n  'connector' = 'database',\n  'password' = "
-        cell_input_text = cell_input_text_prefix + "'{ some_variable }'\n)"
-        cell_input_text_hidden = cell_input_text_prefix + "'${ some_variable }'\n)"
+        cell_input_text = cell_input_text_prefix + "'{ some_variable }'\n)"  # user namespace variable
+        cell_input_text_hidden = cell_input_text_prefix + "'${ some_variable }'\n)"  # getpass variable
 
         with patch("getpass.getpass", lambda: "s3cr3tPassw0rd"):
+            # first, we format `cell_input_text_hidden` so some_variable will be replaced by getpass input
             cell_content_formatter = CellContentFormatter(
                 input_string=cell_input_text_hidden,
                 user_ns=TestCellContentFormatter.variables_in_kernel_context,
@@ -42,12 +48,14 @@ class TestCellContentFormatter:
                                     "(\n  'connector' = 'database',\n  'password' = 's3cr3tPassw0rd'\n)"
             assert not cell_content_formatter.hidden_vars  # is empty
 
-        enriched_cell = CellContentFormatter(
-            input_string=cell_input_text,
-            user_ns=TestCellContentFormatter.variables_in_kernel_context,
-        ).substitute_user_variables()
-        assert enriched_cell == "create table table_name (\n  id INT\n) WITH " \
-                                "(\n  'connector' = 'database',\n  'password' = '1'\n)"
+            # then, we format `cell_input_text_hidden` so some_variable will be replaced by
+            # variable from the dictionary passed as `user_ns`
+            enriched_cell = CellContentFormatter(
+                input_string=cell_input_text,
+                user_ns=TestCellContentFormatter.variables_in_kernel_context,
+            ).substitute_user_variables()
+            assert enriched_cell == "create table table_name (\n  id INT\n) WITH " \
+                                    "(\n  'connector' = 'database',\n  'password' = '1'\n)"
 
     def test_non_existent_variable_use(self):
         """It should throw NonExistentVariableException in case of undefined variable"""
