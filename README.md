@@ -6,7 +6,7 @@
 
 # Streaming Jupyter Integrations
 
-Streaming Jupyter Integrations project includes a set of magics for interactively running `Flink SQL`  jobs in [Jupyter](https://jupyter.org/) Notebooks
+Streaming Jupyter Integrations project includes a set of magics for interactively running _Flink SQL_  jobs in [Jupyter](https://jupyter.org/) Notebooks
 
 In order to actually use these magics, you must install our PIP package along `jupyterlab-lsp`:
 
@@ -18,6 +18,32 @@ And then register in Jupyter with a running IPython in the first cell:
 
 ```python
 %load_ext streaming_jupyter_integrations.magics
+```
+
+## Variables
+Magics allow for dynamic variable substitution in _Flink SQL_ cells.
+```python
+my_variable = 1
+```
+```sql
+SELECT * FROM some_table WHERE product_id = {my_variable}
+```
+
+Moreover, you can mark sensitive variables like password so they will be read from user input every time one runs the cell:
+```sql
+CREATE TABLE MyUserTable (
+  id BIGINT,
+  name STRING,
+  age INT,
+  status BOOLEAN,
+  PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+   'connector' = 'jdbc',
+   'url' = 'jdbc:mysql://localhost:3306/mydatabase',
+   'table-name' = 'users',
+   'username' = '${my_username}',
+   'password' = '${my_password}'
+);
 ```
 
 ## Local development

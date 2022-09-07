@@ -1,6 +1,7 @@
+import getpass
 import re
 import string
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, cast
 
 
 def _match_forwards(full_string: str, match: Any, complimentary_regexp: str) -> str:
@@ -41,6 +42,7 @@ class CellContentFormatter(string.Formatter):
     def __init__(self, input_string: str, user_ns: Dict[Any, Any]):
         self.input_string = input_string
         self.user_ns = user_ns
+        self.hidden_vars: Dict[str, str] = {}
 
     def substitute_user_variables(self) -> str:
         ambiguous_syntax = self._get_ambiguous_syntax(self.input_string)
@@ -52,6 +54,7 @@ class CellContentFormatter(string.Formatter):
                 ),
             )
         escaped_string = self._prepare_escaped_variables(self.input_string)
+        escaped_string = self._get_hidden_variables(escaped_string)
         return self._substitute_variables(escaped_string)
 
     @classmethod
@@ -77,9 +80,23 @@ class CellContentFormatter(string.Formatter):
             .replace(" }", "}")
         )
 
+    def _get_hidden_variables(self, escaped_string: str) -> str:
+        hidden_var_pattern = r"(\$\{[_a-zA-Z][_a-zA-Z0-9]*\})"
+        hidden_list = cast(List[str], re.findall(hidden_var_pattern, escaped_string))
+        for hidden in hidden_list:
+            var_name = hidden[2:-1].strip()
+            while not self.hidden_vars.get(var_name):
+                print(f"Please input '{var_name}':\n")
+                var_val = getpass.getpass()
+                self.hidden_vars[var_name] = var_val
+        return escaped_string.replace("${", "{")
+
     def _substitute_variables(self, escaped_string: str) -> str:
         try:
-            return escaped_string.format(**self.user_ns)
+            merged_vars = {**self.user_ns, **self.hidden_vars}  # hidden_vars takes precedence
+            result = escaped_string.format(**merged_vars)
+            self.hidden_vars.clear()  # ensure it gets wiped out after using
+            return result
         except KeyError as error:
             raise NonExistentVariableException(
                 error.args[0],
