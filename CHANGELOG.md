@@ -5,6 +5,8 @@
 ### Added
 
 - Use `getpass` to read variables marked with `${VARIABLE_NAME}` from user input.
+- Load secret from file using `%load_secret_file` magic.
+- Load secrets from files listed in `.streaming_config.yml` file.
 
 ## [0.4.0] - 2022-08-25
 
