@@ -2,11 +2,13 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-09-12
+
 ### Added
 
-- Use `getpass` to read variables marked with `${VARIABLE_NAME}` from user input.
-- Load secret from file using `%load_secret_file` magic.
-- Load secrets from files listed in `.streaming_config.yml` file.
+-   Use `getpass` to read variables marked with `${VARIABLE_NAME}` from user input.
+-   Load secret from file using `%load_secret_file` magic.
+-   Load secrets from files listed in `.streaming_config.yml` file.
 
 ## [0.4.0] - 2022-08-25
 
@@ -52,7 +54,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.5.0...HEAD
+
+[0.5.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.4.0...0.5.0
 
 [0.4.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.3.0...0.4.0
 
