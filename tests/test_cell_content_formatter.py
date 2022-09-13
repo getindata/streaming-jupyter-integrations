@@ -57,6 +57,36 @@ class TestCellContentFormatter:
             assert enriched_cell == "create table table_name (\n  id INT\n) WITH " \
                                     "(\n  'connector' = 'database',\n  'password' = '1'\n)"
 
+    def test_hidden_variable_enrichment_using_env_var(self):
+        """
+        Test Jupyter cell input text enrichment with variables defined in
+        IPython kernel, environment and got by getpass method.
+        """
+
+        cell_input_text = """create table {{ some_table_name }} (
+  id INT
+) WITH (
+  'connector' = 'database',
+  'password' = '${ some_variable }',
+  'username' = '${username}'
+)"""
+
+        with patch("getpass.getpass", lambda: "s3cr3tPassw0rd"), patch.dict("os.environ", {"username": "u532n4m3"}):
+            # first, we format `cell_input_text_hidden` so some_variable will be replaced by getpass input
+            cell_content_formatter = CellContentFormatter(
+                input_string=cell_input_text,
+                user_ns=TestCellContentFormatter.variables_in_kernel_context,
+            )
+            enriched_cell = cell_content_formatter.substitute_user_variables()
+            assert enriched_cell == """create table table_name (
+  id INT
+) WITH (
+  'connector' = 'database',
+  'password' = 's3cr3tPassw0rd',
+  'username' = 'u532n4m3'
+)"""
+            assert not cell_content_formatter.hidden_vars  # is empty
+
     def test_non_existent_variable_use(self):
         """It should throw NonExistentVariableException in case of undefined variable"""
         cell_input_text = "select * from {{ non_existent_variable }}"
