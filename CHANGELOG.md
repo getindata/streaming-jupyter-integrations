@@ -2,13 +2,15 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2022-09-13
+
 ### Changed
 
-- Read variable marked with `${VARIABLE_NAME}` from environment variables, if it exists. Otherwise, ask user using `getpass` module.
+-   Read variable marked with `${VARIABLE_NAME}` from environment variables, if it exists. Otherwise, ask user using `getpass` module.
 
 ### Fixed
 
-- Ensure that `jars` directory exists before plugins loading.
+-   Ensure that `jars` directory exists before plugins loading.
 
 ## [0.5.0] - 2022-09-12
 
@@ -62,7 +64,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.0...HEAD
+
+[0.6.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.5.0...0.6.0
 
 [0.5.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.4.0...0.5.0
 
