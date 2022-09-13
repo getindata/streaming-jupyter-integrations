@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Read variable marked with `${VARIABLE_NAME}` from environment variables, if it exists. Otherwise, ask user using `getpass` module.
+
 ## [0.5.0] - 2022-09-12
 
 ### Added
