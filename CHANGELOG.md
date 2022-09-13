@@ -6,6 +6,10 @@
 
 - Read variable marked with `${VARIABLE_NAME}` from environment variables, if it exists. Otherwise, ask user using `getpass` module.
 
+### Fixed
+
+- Ensure that `jars` directory exists before plugins loading.
+
 ## [0.5.0] - 2022-09-12
 
 ### Added
