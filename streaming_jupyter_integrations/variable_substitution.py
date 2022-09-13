@@ -1,4 +1,5 @@
 import getpass
+import os
 import re
 import string
 from typing import Any, Dict, List, Optional, cast
@@ -85,6 +86,7 @@ class CellContentFormatter(string.Formatter):
         hidden_list = cast(List[str], re.findall(hidden_var_pattern, escaped_string))
         for hidden in hidden_list:
             var_name = hidden[2:-1].strip()
+            self.hidden_vars[var_name] = os.environ.get(var_name, "")
             while not self.hidden_vars.get(var_name):
                 print(f"Please input '{var_name}':\n")
                 var_val = getpass.getpass()

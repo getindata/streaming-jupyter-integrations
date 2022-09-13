@@ -62,6 +62,7 @@ class Integrations(Magics):
             stream_execution_environment=self.s_env,
             environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
         )
+        self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.__load_plugins()
         self.interrupted = False
         self.polling_ms = 100
@@ -71,7 +72,6 @@ class Integrations(Magics):
         self.deployment_bar = DeploymentBar(interrupt_callback=self.__interrupt_execute)
         # Indicates whether a job is executing on the Flink cluster in the background
         self.background_execution_in_progress = False
-        self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
         self.__flink_execute_sql_file("init.sql")

@@ -29,7 +29,7 @@ my_variable = 1
 SELECT * FROM some_table WHERE product_id = {my_variable}
 ```
 
-Moreover, you can mark sensitive variables like password so they will be read from user input every time one runs the cell:
+Moreover, you can mark sensitive variables like password so they will be read from environment variables or user input every time one runs the cell:
 ```sql
 CREATE TABLE MyUserTable (
   id BIGINT,
