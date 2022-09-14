@@ -40,6 +40,8 @@ from .variable_substitution import CellContentFormatter
 class Integrations(Magics):
     def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
+        self._secrets: Dict[str, str] = {}
+        self._load_secrets_from_scli_config()
         print(
             "Set env variable JAVA_TOOL_OPTIONS="
             "'--add-opens=java.base/java.util=ALL-UNNAMED "
@@ -75,9 +77,6 @@ class Integrations(Magics):
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
         self.__flink_execute_sql_file("init.sql")
-
-        self._secrets: Dict[str, str] = {}
-        self._load_secrets_from_scli_config()
 
     @line_magic
     @magic_arguments()
