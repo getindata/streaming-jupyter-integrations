@@ -123,7 +123,7 @@ class Integrations(Magics):
             except yaml.YAMLError:
                 print(f"Cannot read scli config from {config_file_path}. It is not a valid YAML file.")
                 return
-        secrets_list = cast(Dict[str, str], config.get("secrets"))
+        secrets_list = cast(Dict[str, str], config.get("secrets", {}))
         for var_name, filepath in secrets_list.items():
             self._load_secret_from_file(var_name, filepath)
 

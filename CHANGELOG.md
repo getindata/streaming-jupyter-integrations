@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Do not throw if `secrets` is nonexistent in the [streaming CLI](https://github.com/getindata/streaming-cli/) config file.
+
 ## [0.6.1] - 2022-09-14
 
 ### Fixed
