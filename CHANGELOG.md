@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2022-09-14
+
 ### Fixed
 
-- Ensure `_secrets` variable is set at the beginning of magics initialization.
+-   Ensure `_secrets` variable is set at the beginning of magics initialization.
 
 ## [0.6.0] - 2022-09-13
 
@@ -68,7 +70,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.1...HEAD
+
+[0.6.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.0...0.6.1
 
 [0.6.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.5.0...0.6.0
 
