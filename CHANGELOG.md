@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Ensure `_secrets` variable is set at the beginning of magics initialization.
+
 ## [0.6.0] - 2022-09-13
 
 ### Changed
