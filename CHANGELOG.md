@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.6.2] - 2022-09-14
+
+### Fixed
+
+-   Do not throw if `secrets` is nonexistent in the [streaming CLI](https://github.com/getindata/streaming-cli/) config file.
+
 ## [0.6.1] - 2022-09-14
 
 ### Fixed
@@ -70,7 +76,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.1...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.2...HEAD
+
+[0.6.2]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.1...0.6.2
 
 [0.6.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.0...0.6.1
 
