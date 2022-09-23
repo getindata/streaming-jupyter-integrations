@@ -72,8 +72,9 @@ setup_args = {
     'long_description_content_type': "text/markdown",
     'license': "Apache Software License (Apache 2.0)",
     'license_files': ("LICENSE",),
-    'python_requires': ">=3.8",
+    'python_requires': ">=3.7",
     'classifiers': [
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
     ],

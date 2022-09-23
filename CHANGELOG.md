@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Support for python 3.7
+
 ## [0.6.2] - 2022-09-14
 
 ### Fixed
