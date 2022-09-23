@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2022-09-23
+
 ### Added
 
 -   Support for python 3.7
@@ -80,7 +82,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.2...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.7.0...HEAD
+
+[0.7.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.2...0.7.0
 
 [0.6.2]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.1...0.6.2
 
