@@ -8,7 +8,7 @@ from typing import List
 from setuptools import find_packages, setup
 from setuptools.command.install import install
 
-__version__ = "0.6.2"
+__version__ = "0.7.0"
 
 HERE = Path(__file__).parent.resolve()
 
@@ -72,8 +72,9 @@ setup_args = {
     'long_description_content_type': "text/markdown",
     'license': "Apache Software License (Apache 2.0)",
     'license_files': ("LICENSE",),
-    'python_requires': ">=3.8",
+    'python_requires': ">=3.7",
     'classifiers': [
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
     ],
