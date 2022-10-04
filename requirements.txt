@@ -1,4 +1,5 @@
 ipywidgets
+ipytree
 apache-flink==1.15.1
 setuptools
 pandas

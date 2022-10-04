@@ -17,10 +17,12 @@ from IPython.core.display import display as core_display
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import (argument, magic_arguments,
                                           parse_argstring)
+from ipytree import Node, Tree
 from ipywidgets import IntText
 from jupyter_core.paths import jupyter_config_dir
 from py4j.protocol import Py4JJavaError
 from pyflink.common import Configuration
+from pyflink.common.types import Row
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway
 from pyflink.table import (EnvironmentSettings, ResultKind,
@@ -473,6 +475,59 @@ class Integrations(Magics):
                 print(f"No setter available for {key}")
 
         return configuration
+
+    @line_magic
+    def flink_show_table_tree(self, line: str) -> Tree:
+        return self._build_schema_tree()
+
+    def _build_schema_tree(self) -> Tree:
+        tree = Tree()
+        catalogs = self.st_env.execute_sql("SHOW CATALOGS").collect()
+        for catalog in catalogs:
+            tree.add_node(self._build_catalog_node(catalog))
+        return tree
+
+    def _build_catalog_node(self, catalog: Row) -> Node:
+        catalog_name = catalog[0]
+        self.st_env.execute_sql(f"USE CATALOG {catalog_name}")
+        databases = self.st_env.execute_sql("SHOW DATABASES").collect()
+        tree_databases = [self._build_database_node(catalog_name, database) for database in databases]
+        return Node(catalog_name, tree_databases, opened=False, icon="database")
+
+    def _build_database_node(self, catalog_name: str, database: Row) -> Node:
+        database_name = database[0]
+        tables = self.st_env.execute_sql(f"SHOW TABLES FROM {catalog_name}.{database_name}").collect()
+        tree_tables = [self._build_table_node(catalog_name, database_name, table) for table in tables]
+        return Node(database_name, tree_tables, opened=False, icon="database")
+
+    def _build_table_node(self, catalog_name: str, database_name: str, table: Row) -> Node:
+        table_name = table[0]
+        columns = self.st_env.execute_sql(f"DESCRIBE {catalog_name}.{database_name}.{table_name}").collect()
+        tree_columns = [self._build_column_node(column) for column in columns]
+        return Node(table_name, tree_columns, opened=False, icon="table")
+
+    def _build_column_node(self, column: Row) -> Node:
+        column_icon = "columns"
+        column_name = column[0]
+        column_type = column[1]
+        column_null = column[2]
+        column_key = column[3]
+        column_extras = column[4]
+        column_watermark = column[5]
+
+        column_display = f"{column_name}: {column_type}"
+        if column_null:
+            column_display += " NULLABLE"
+        else:
+            column_display += " NOT NULL"
+        if column_extras:
+            column_display += f" {column_extras}"
+        if column_watermark:
+            column_display += f" {column_watermark}"
+
+        if column_key:
+            column_icon = "key"
+        return Node(column_display, opened=False, icon=column_icon)
 
 
 def load_ipython_extension(ipython: Any) -> None:
