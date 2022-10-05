@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Enable users to display catalogs, databases, tables and columns as an expandable tree by running `%flink_show_table_tree` command.
+
 ## [0.7.0] - 2022-09-23
 
 ### Added
