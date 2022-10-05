@@ -517,7 +517,6 @@ class Integrations(Magics):
         return Node(table_name, tree_columns, opened=False, icon="table")
 
     def _build_column_node(self, column: Row) -> Node:
-        column_icon = "columns"
         column_name = column[0]
         column_type = column[1]
         column_null = column[2]
@@ -526,17 +525,13 @@ class Integrations(Magics):
         column_watermark = column[5]
 
         column_display = f"{column_name}: {column_type}"
-        if column_null:
-            column_display += " NULLABLE"
-        else:
-            column_display += " NOT NULL"
+        column_display += " NULLABLE" if column_null else " NOT NULL"
         if column_extras:
             column_display += f" {column_extras}"
         if column_watermark:
             column_display += f" {column_watermark}"
 
-        if column_key:
-            column_icon = "key"
+        column_icon = "key" if column_key else "columns"
         return Node(column_display, opened=False, icon=column_icon)
 
 
