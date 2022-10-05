@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-10-05
+
 ### Added
 
 -   Enable users to display catalogs, databases, tables and columns as an expandable tree by running `%flink_show_table_tree` command.
@@ -86,7 +88,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.0...HEAD
+
+[0.8.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.7.0...0.8.0
 
 [0.7.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.6.2...0.7.0
 
