@@ -481,10 +481,20 @@ class Integrations(Magics):
         return self._build_schema_tree()
 
     def _build_schema_tree(self) -> Tree:
+        # Save name of the current catalog and database. In order to build tables hierarchy, we need to change
+        # current catalog and database. Once the table tree is built, the current catalog and database are set to
+        # the initial ones.
+        current_catalog_name = self.st_env.execute_sql("SHOW CURRENT CATALOG").collect().next()[0]
+        current_database_name = self.st_env.execute_sql("SHOW CURRENT DATABASE").collect().next()[0]
+
         tree = Tree()
         catalogs = self.st_env.execute_sql("SHOW CATALOGS").collect()
         for catalog in catalogs:
             tree.add_node(self._build_catalog_node(catalog))
+
+        self.st_env.execute_sql(f"USE CATALOG {current_catalog_name}")
+        self.st_env.execute_sql(f"USE {current_database_name}")
+
         return tree
 
     def _build_catalog_node(self, catalog: Row) -> Node:
