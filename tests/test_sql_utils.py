@@ -1,6 +1,7 @@
 import unittest
 
-from streaming_jupyter_integrations.sql_utils import is_ddl, is_dml, is_dql
+from streaming_jupyter_integrations.sql_utils import (inline_sql_in_cell,
+                                                      is_ddl, is_dml, is_dql)
 
 
 # Some of the following examples are taken from Flink SQL documentation
@@ -302,3 +303,18 @@ GROUP BY
         self.assertFalse(is_ddl(non_match))
         self.assertFalse(is_dml(non_match))
         self.assertFalse(is_dql(non_match))
+
+    def test_multiline_cell(self):
+        multiline_str = "CREATE TABLE multiline (\n"\
+                        "id INT\n"\
+                        ") WITH (\n"\
+                        "'connector'='datagen')"
+        self.assertEqual(inline_sql_in_cell(multiline_str),
+                         "CREATE TABLE multiline ( id INT ) WITH ( 'connector'='datagen')")
+
+    def test_comment(self):
+        with_comments = "SELECT id\n"\
+                        "--,name\n"\
+                        "FROM table\n"\
+                        "WHERE line = '--weird-line'"
+        self.assertEqual(inline_sql_in_cell(with_comments), "SELECT id  FROM table WHERE line = '--weird-line'")
