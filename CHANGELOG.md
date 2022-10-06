@@ -4,7 +4,7 @@
 
 ### Fixed
 
--   Do not add comments to the inline query
+-   Do not add lines starting with a comment to the inline query (we still don't handle comments in the middle of line)
 
 ## [0.8.0] - 2022-10-05
 
