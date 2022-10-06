@@ -35,7 +35,7 @@ def inline_sql_in_cell(cell_contents: str) -> str:
     """
     Converts cell contents to a single line SQL statement.
     """
-    return cell_contents.replace("\n", " ")
+    return ' '.join([line for line in cell_contents.split("\n") if not line.strip().startswith('--')])
 
 
 def is_ddl(sql: str) -> bool:

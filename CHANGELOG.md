@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Do not add comments to the inline query
+
 ## [0.8.0] - 2022-10-05
 
 ### Added
