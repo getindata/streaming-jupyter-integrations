@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2022-10-07
+
+### Fixed
+
+-   Do not add comments to the inline query
+
 ## [0.8.0] - 2022-10-05
 
 ### Added
@@ -88,7 +94,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.1...HEAD
+
+[0.8.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.0...0.8.1
 
 [0.8.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.7.0...0.8.0
 
