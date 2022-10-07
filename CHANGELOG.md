@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Update Apache Flink dependency to 1.15.2.
+
 ## [0.8.1] - 2022-10-07
 
 ### Fixed
