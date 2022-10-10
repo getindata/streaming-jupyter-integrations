@@ -492,27 +492,27 @@ class Integrations(Magics):
         for catalog in catalogs:
             tree.add_node(self._build_catalog_node(catalog))
 
-        self.st_env.execute_sql(f"USE CATALOG {current_catalog_name}")
-        self.st_env.execute_sql(f"USE {current_database_name}")
+        self.st_env.execute_sql(f"USE CATALOG `{current_catalog_name}`")
+        self.st_env.execute_sql(f"USE `{current_database_name}`")
 
         return tree
 
     def _build_catalog_node(self, catalog: Row) -> Node:
         catalog_name = catalog[0]
-        self.st_env.execute_sql(f"USE CATALOG {catalog_name}")
+        self.st_env.execute_sql(f"USE CATALOG `{catalog_name}`")
         databases = self.st_env.execute_sql("SHOW DATABASES").collect()
         tree_databases = [self._build_database_node(catalog_name, database) for database in databases]
         return Node(catalog_name, tree_databases, opened=False, icon="database")
 
     def _build_database_node(self, catalog_name: str, database: Row) -> Node:
         database_name = database[0]
-        tables = self.st_env.execute_sql(f"SHOW TABLES FROM {catalog_name}.{database_name}").collect()
+        tables = self.st_env.execute_sql(f"SHOW TABLES FROM `{catalog_name}`.`{database_name}`").collect()
         tree_tables = [self._build_table_node(catalog_name, database_name, table) for table in tables]
         return Node(database_name, tree_tables, opened=False, icon="database")
 
     def _build_table_node(self, catalog_name: str, database_name: str, table: Row) -> Node:
         table_name = table[0]
-        columns = self.st_env.execute_sql(f"DESCRIBE {catalog_name}.{database_name}.{table_name}").collect()
+        columns = self.st_env.execute_sql(f"DESCRIBE `{catalog_name}`.`{database_name}`.`{table_name}`").collect()
         tree_columns = [self._build_column_node(column) for column in columns]
         return Node(table_name, tree_columns, opened=False, icon="table")
 

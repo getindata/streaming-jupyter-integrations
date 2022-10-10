@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Add backticks to escape table/database/catalog names
+
 ## [0.8.2] - 2022-10-07
 
 ### Changed
