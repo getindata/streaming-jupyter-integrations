@@ -10,6 +10,7 @@
 
 -   Add backticks to escape table/database/catalog names
 -   Print error if query execution fails
+-   Fix TableResult#wait() timeout parameter
 
 ## [0.8.2] - 2022-10-07
 

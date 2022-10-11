@@ -66,7 +66,8 @@ class Integrations(Magics):
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.__load_plugins()
         self.interrupted = False
-        self.polling_ms = 100
+        # Wait if necessary for at most the given time for the data to be ready.
+        self.wait_timeout_ms = 60 * 60 * 1000  # 1H
         # 20ms
         self.async_wait_s = 2e-2
         Integrations.__enable_sql_syntax_highlighting()
@@ -201,7 +202,7 @@ class Integrations(Magics):
                 # Explicit await is needed to unblock the main thread to pick up other tasks.
                 # In Jupyter's main execution pool there is only one worker thread.
                 await asyncio.sleep(self.async_wait_s)
-                execution_result.wait(self.polling_ms)
+                execution_result.wait(self.wait_timeout_ms)
                 if is_dql(stmt):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
