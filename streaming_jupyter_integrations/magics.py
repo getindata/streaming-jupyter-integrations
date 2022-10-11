@@ -202,7 +202,6 @@ class Integrations(Magics):
                 # Explicit await is needed to unblock the main thread to pick up other tasks.
                 # In Jupyter's main execution pool there is only one worker thread.
                 await asyncio.sleep(self.async_wait_s)
-                execution_result.wait(self.wait_timeout_ms)
                 if is_dql(stmt):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
@@ -212,6 +211,7 @@ class Integrations(Magics):
                 else:
                     # if finished then return early even if the user interrupts after this
                     # the actual invocation has already finished
+                    execution_result.wait(self.wait_timeout_ms)
                     print(successful_execution_msg)
                     return
             except Py4JJavaError as err:
