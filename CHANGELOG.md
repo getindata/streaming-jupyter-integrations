@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Support for batch mode
+
 ### Fixed
 
 -   Add backticks to escape table/database/catalog names

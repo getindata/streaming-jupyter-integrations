@@ -62,10 +62,7 @@ class Integrations(Magics):
                 conf._j_configuration
             )
         )
-        self.st_env = StreamTableEnvironment.create(
-            stream_execution_environment=self.s_env,
-            environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
-        )
+        self._set_table_env()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.__load_plugins()
         self.interrupted = False
@@ -533,6 +530,18 @@ class Integrations(Magics):
 
         column_icon = "key" if column_key else "columns"
         return Node(column_display, opened=False, icon=column_icon)
+
+    def _set_table_env(self) -> None:
+        if "FLINK_MODE" in os.environ and os.environ["FLINK_MODE"] == "batch":
+            self.st_env = StreamTableEnvironment.create(
+                stream_execution_environment=self.s_env,
+                environment_settings=EnvironmentSettings.new_instance().in_batch_mode().build(),
+            )
+        else:
+            self.st_env = StreamTableEnvironment.create(
+                stream_execution_environment=self.s_env,
+                environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
+            )
 
 
 def load_ipython_extension(ipython: Any) -> None:

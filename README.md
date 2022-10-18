@@ -46,6 +46,14 @@ CREATE TABLE MyUserTable (
 );
 ```
 
+## Batch mode
+
+You can run Flink in batch mode by setting `FLINK_MODE` environment variable before loading magics.
+
+```ipython
+%env FLINK_MODE=batch
+```
+
 ## Local development
 
 Note: You will need NodeJS to build the extension package.
