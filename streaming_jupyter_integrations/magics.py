@@ -377,11 +377,12 @@ class Integrations(Magics):
 
     def __handle_done(self, fut: Any) -> None:
         self.background_execution_in_progress = False
-        print("Execution done")
         # https://stackoverflow.com/questions/48161387/python-how-to-print-the-stacktrace-of-an-exception-object-without-a-currently
-        # will raise an exception to the main thread
         if fut.exception():
-            fut.result()
+            print("Execution failed")
+            print(fut.exception(), file=sys.stderr)
+        else:
+            print("Execution done")
 
     def __enrich_cell(self, cell: str) -> str:
         enriched_cell = CellContentFormatter(

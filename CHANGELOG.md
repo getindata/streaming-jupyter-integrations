@@ -9,6 +9,7 @@
 ### Fixed
 
 -   Add backticks to escape table/database/catalog names
+-   Print error if query execution fails
 
 ## [0.8.2] - 2022-10-07
 
