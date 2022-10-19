@@ -8,8 +8,10 @@
 
 ### Fixed
 
--   Add backticks to escape table/database/catalog names
--   Print error if query execution fails
+-   Add backticks to escape table/database/catalog names.
+-   Print error if query execution fails.
+-   Fix TableResult#wait() timeout parameter.
+-   Fix for batch queries with an empty result.
 
 ## [0.8.2] - 2022-10-07
 
