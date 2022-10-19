@@ -10,3 +10,4 @@ wget
 sqlparse
 pyyaml
 types-PyYAML
+yarn-api-client
