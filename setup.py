@@ -8,7 +8,7 @@ from typing import List
 from setuptools import find_packages, setup
 from setuptools.command.install import install
 
-__version__ = "0.8.2"
+__version__ = "0.9.0"
 
 HERE = Path(__file__).parent.resolve()
 

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2022-10-20
+
 ### Added
 
 -   Support for batch mode
@@ -111,7 +113,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.2...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.0...HEAD
+
+[0.9.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.2...0.9.0
 
 [0.8.2]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.1...0.8.2
 
