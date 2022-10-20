@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Show functions & change icon for views in `%flink_show_table_tree`
+
 ## [0.9.0] - 2022-10-20
 
 ### Added
