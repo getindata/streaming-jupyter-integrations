@@ -62,14 +62,12 @@ class Integrations(Magics):
                 conf._j_configuration
             )
         )
-        self.st_env = StreamTableEnvironment.create(
-            stream_execution_environment=self.s_env,
-            environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
-        )
+        self._set_table_env()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.__load_plugins()
         self.interrupted = False
-        self.polling_ms = 100
+        # Wait if necessary for at most the given time for the data to be ready.
+        self.wait_timeout_ms = 60 * 60 * 1000  # 1H
         # 20ms
         self.async_wait_s = 2e-2
         Integrations.__enable_sql_syntax_highlighting()
@@ -204,7 +202,6 @@ class Integrations(Magics):
                 # Explicit await is needed to unblock the main thread to pick up other tasks.
                 # In Jupyter's main execution pool there is only one worker thread.
                 await asyncio.sleep(self.async_wait_s)
-                execution_result.wait(self.polling_ms)
                 if is_dql(stmt):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
@@ -214,6 +211,7 @@ class Integrations(Magics):
                 else:
                     # if finished then return early even if the user interrupts after this
                     # the actual invocation has already finished
+                    execution_result.wait(self.wait_timeout_ms)
                     print(successful_execution_msg)
                     return
             except Py4JJavaError as err:
@@ -380,11 +378,12 @@ class Integrations(Magics):
 
     def __handle_done(self, fut: Any) -> None:
         self.background_execution_in_progress = False
-        print("Execution done")
         # https://stackoverflow.com/questions/48161387/python-how-to-print-the-stacktrace-of-an-exception-object-without-a-currently
-        # will raise an exception to the main thread
         if fut.exception():
-            fut.result()
+            print("Execution failed")
+            print(fut.exception(), file=sys.stderr)
+        else:
+            print("Execution done")
 
     def __enrich_cell(self, cell: str) -> str:
         enriched_cell = CellContentFormatter(
@@ -492,27 +491,27 @@ class Integrations(Magics):
         for catalog in catalogs:
             tree.add_node(self._build_catalog_node(catalog))
 
-        self.st_env.execute_sql(f"USE CATALOG {current_catalog_name}")
-        self.st_env.execute_sql(f"USE {current_database_name}")
+        self.st_env.execute_sql(f"USE CATALOG `{current_catalog_name}`")
+        self.st_env.execute_sql(f"USE `{current_database_name}`")
 
         return tree
 
     def _build_catalog_node(self, catalog: Row) -> Node:
         catalog_name = catalog[0]
-        self.st_env.execute_sql(f"USE CATALOG {catalog_name}")
+        self.st_env.execute_sql(f"USE CATALOG `{catalog_name}`")
         databases = self.st_env.execute_sql("SHOW DATABASES").collect()
         tree_databases = [self._build_database_node(catalog_name, database) for database in databases]
         return Node(catalog_name, tree_databases, opened=False, icon="database")
 
     def _build_database_node(self, catalog_name: str, database: Row) -> Node:
         database_name = database[0]
-        tables = self.st_env.execute_sql(f"SHOW TABLES FROM {catalog_name}.{database_name}").collect()
+        tables = self.st_env.execute_sql(f"SHOW TABLES FROM `{catalog_name}`.`{database_name}`").collect()
         tree_tables = [self._build_table_node(catalog_name, database_name, table) for table in tables]
         return Node(database_name, tree_tables, opened=False, icon="database")
 
     def _build_table_node(self, catalog_name: str, database_name: str, table: Row) -> Node:
         table_name = table[0]
-        columns = self.st_env.execute_sql(f"DESCRIBE {catalog_name}.{database_name}.{table_name}").collect()
+        columns = self.st_env.execute_sql(f"DESCRIBE `{catalog_name}`.`{database_name}`.`{table_name}`").collect()
         tree_columns = [self._build_column_node(column) for column in columns]
         return Node(table_name, tree_columns, opened=False, icon="table")
 
@@ -533,6 +532,18 @@ class Integrations(Magics):
 
         column_icon = "key" if column_key else "columns"
         return Node(column_display, opened=False, icon=column_icon)
+
+    def _set_table_env(self) -> None:
+        if "FLINK_MODE" in os.environ and os.environ["FLINK_MODE"] == "batch":
+            self.st_env = StreamTableEnvironment.create(
+                stream_execution_environment=self.s_env,
+                environment_settings=EnvironmentSettings.new_instance().in_batch_mode().build(),
+            )
+        else:
+            self.st_env = StreamTableEnvironment.create(
+                stream_execution_environment=self.s_env,
+                environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
+            )
 
 
 def load_ipython_extension(ipython: Any) -> None:
