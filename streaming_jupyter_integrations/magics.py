@@ -506,8 +506,8 @@ class Integrations(Magics):
     def _build_database_node(self, catalog_name: str, database: Row) -> Node:
         database_name = database[0]
         self.st_env.execute_sql(f"USE `{database_name}`")
-        tables = [table[0] for table in self.st_env.execute_sql(f"SHOW TABLES").collect()]
-        views = [view[0] for view in self.st_env.execute_sql(f"SHOW VIEWS").collect()]
+        tables = [table[0] for table in self.st_env.execute_sql("SHOW TABLES").collect()]
+        views = [view[0] for view in self.st_env.execute_sql("SHOW VIEWS").collect()]
         tree_tables = [self._build_table_node(catalog_name, database_name, table,
                                               "eye" if table in views else "table") for table in tables]
         functions_node = self._build_functions_node()
@@ -519,7 +519,7 @@ class Integrations(Magics):
         tree_functions = [Node(function[0], opened=False, icon="terminal") for function in functions]
         return Node("Functions", tree_functions, opened=False, icon="list")
 
-    def _build_table_node(self, catalog_name: str, database_name: str, table_name: str, icon="table") -> Node:
+    def _build_table_node(self, catalog_name: str, database_name: str, table_name: str, icon: str) -> Node:
         columns = self.st_env.execute_sql(f"DESCRIBE `{catalog_name}`.`{database_name}`.`{table_name}`").collect()
         tree_columns = [self._build_column_node(column) for column in columns]
         return Node(table_name, tree_columns, opened=False, icon=icon)
