@@ -501,19 +501,28 @@ class Integrations(Magics):
         self.st_env.execute_sql(f"USE CATALOG `{catalog_name}`")
         databases = self.st_env.execute_sql("SHOW DATABASES").collect()
         tree_databases = [self._build_database_node(catalog_name, database) for database in databases]
-        return Node(catalog_name, tree_databases, opened=False, icon="database")
+        return Node(catalog_name, tree_databases, opened=False, icon="folder")
 
     def _build_database_node(self, catalog_name: str, database: Row) -> Node:
         database_name = database[0]
-        tables = self.st_env.execute_sql(f"SHOW TABLES FROM `{catalog_name}`.`{database_name}`").collect()
-        tree_tables = [self._build_table_node(catalog_name, database_name, table) for table in tables]
+        self.st_env.execute_sql(f"USE `{database_name}`")
+        tables = [table[0] for table in self.st_env.execute_sql(f"SHOW TABLES").collect()]
+        views = [view[0] for view in self.st_env.execute_sql(f"SHOW VIEWS").collect()]
+        tree_tables = [self._build_table_node(catalog_name, database_name, table,
+                                              "eye" if table in views else "table") for table in tables]
+        functions_node = self._build_functions_node()
+        tree_tables.append(functions_node)
         return Node(database_name, tree_tables, opened=False, icon="database")
 
-    def _build_table_node(self, catalog_name: str, database_name: str, table: Row) -> Node:
-        table_name = table[0]
+    def _build_functions_node(self) -> Node:
+        functions = self.st_env.execute_sql("SHOW USER FUNCTIONS").collect()
+        tree_functions = [Node(function[0], opened=False, icon="terminal") for function in functions]
+        return Node("Functions", tree_functions, opened=False, icon="list")
+
+    def _build_table_node(self, catalog_name: str, database_name: str, table_name: str, icon="table") -> Node:
         columns = self.st_env.execute_sql(f"DESCRIBE `{catalog_name}`.`{database_name}`.`{table_name}`").collect()
         tree_columns = [self._build_column_node(column) for column in columns]
-        return Node(table_name, tree_columns, opened=False, icon="table")
+        return Node(table_name, tree_columns, opened=False, icon=icon)
 
     def _build_column_node(self, column: Row) -> Node:
         column_name = column[0]
