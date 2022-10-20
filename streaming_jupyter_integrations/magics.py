@@ -72,7 +72,7 @@ class Integrations(Magics):
     @magic_arguments()
     @argument("-e", "--execution-mode", type=str, help="Flink execution mode", required=False,
               default="streaming")
-    @argument("-m", "--execution-target", type=str, help="The target on which queries will be executed", required=False,
+    @argument("-t", "--execution-target", type=str, help="The target on which queries will be executed", required=False,
               default="local")
     @argument("-h", "--remote-hostname", type=str, help="Hostname of the remote JobManager", required=False)
     @argument("-p", "--remote-port", type=int, help="Port of the remote JobManager", required=False)
@@ -81,6 +81,12 @@ class Integrations(Magics):
     @argument("-yid", "--yarn-application-id", type=str, help="Flink Session Cluster applicationId", required=False)
     def flink_connect(self, line: str) -> None:
         args = parse_argstring(self.flink_connect, line)
+        try:
+            self._flink_connect(args)
+        except ValueError as e:
+            print(e, file=sys.stderr)
+
+    def _flink_connect(self, args: Any) -> None:
         execution_mode = args.execution_mode
         execution_target = args.execution_target
 
@@ -92,8 +98,8 @@ class Integrations(Magics):
             self._flink_connect_yarn_session(args.resource_manager_hostname, args.resource_manager_port,
                                              args.yarn_application_id)
         else:
-            print("Unknown execution mode. Expected 'local', 'remote' or 'yarn-session', actual '{execution_mode}'.")
-            return None
+            raise ValueError(
+                f"Unknown execution mode. Expected 'local', 'remote' or 'yarn-session', actual '{execution_target}'.")
 
         self.__flink_execute_sql_file("init.sql")
         self._set_table_env(execution_mode)
