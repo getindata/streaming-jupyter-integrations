@@ -30,7 +30,7 @@ Then you need to decide which _execution mode_ and _execution target_ to choose.
 %flink_connect --execution-mode [mode] --execution-target [target]
 ```
 
-By default, the streaming execution mode and local execution target are used.
+By default, the `streaming` execution mode and `local` execution target are used.
 
 ```python
 %flink_connect
@@ -85,8 +85,8 @@ REST API address.
 
 Running Flink in `yarn-session` mode will connect to an existing Flink session cluster running on YARN. You may specify
 the hostname and port of the YARN Resource Manager (`--resource-manager-hostname` and `--resource-manager-port`).
-If Resource Manager address is not provided, the address is extracted from Hadoop configuration files
-(`$HADOOP_CONF_DIR/yarn-site.xml` file is searched). You can also specify YARN applicationId (`--yarn-application-id`)
+If Resource Manager address is not provided, the address is extracted from YARN configuration file
+`$HADOOP_CONF_DIR/yarn-site.xml`. You can also specify YARN applicationId (`--yarn-application-id`)
 to which the notebook will connect to. If `--yarn-application-id` is not specified, the notebook will connect to
 the only YARN application running on the cluster. If there are more than one running application, the command will fail.
 

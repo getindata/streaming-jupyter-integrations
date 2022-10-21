@@ -88,7 +88,8 @@ class TestYarn(unittest.TestCase):
             status=200,
         )
 
-    def _mock_cluster_app_success(self, app):
+    @staticmethod
+    def _mock_cluster_app_success(app):
         responses.add(
             responses.GET,
             f"http://example.com:8123/ws/v1/cluster/apps/{app['id']}",
@@ -96,7 +97,8 @@ class TestYarn(unittest.TestCase):
             status=200,
         )
 
-    def _mock_cluster_app_not_found(self, app_id):
+    @staticmethod
+    def _mock_cluster_app_not_found(app_id):
         responses.add(
             responses.GET,
             f"http://example.com:8123/ws/v1/cluster/apps/{app_id}",
