@@ -136,15 +136,6 @@ CREATE TABLE MyUserTable (
    'password' = '${my_password}'
 );
 ```
-
-## Batch mode
-
-You can run Flink in batch mode by setting `FLINK_MODE` environment variable before loading magics.
-
-```ipython
-%env FLINK_MODE=batch
-```
-
 ---
 
 ## Local development
