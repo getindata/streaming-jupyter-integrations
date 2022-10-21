@@ -36,7 +36,7 @@ from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
 from .sql_utils import inline_sql_in_cell, is_dml, is_dql
 from .variable_substitution import CellContentFormatter
-from .yarn import ResourceManagerClient
+from .yarn import find_session_jm_address
 
 
 @magics_class
@@ -126,33 +126,8 @@ class Integrations(Magics):
         )
 
     def _flink_connect_yarn_session(self, rm_hostname: str, rm_port: int, yarn_application_id: str) -> None:
-        jm_hostname, jm_port = self._find_session_jm_address(rm_hostname, rm_port, yarn_application_id)
+        jm_hostname, jm_port = find_session_jm_address(rm_hostname, rm_port, yarn_application_id)
         self._flink_connect_remote(jm_hostname, jm_port)
-
-    def _find_session_jm_address(self, rm_hostname: str, rm_port: int, yarn_application_id: str) -> Tuple[str, int]:
-        if rm_hostname and rm_port:
-            rm_client = ResourceManagerClient(rm_hostname, rm_port)
-        else:
-            rm_client = ResourceManagerClient()
-        if yarn_application_id is None:
-            yarn_application_id = self._find_yarn_application_id(rm_client)
-
-        app_metadata = rm_client.describe_application(yarn_application_id)
-        address = app_metadata["amRPCAddress"]
-        address_parts = address.rsplit(":", 1)
-        hostname = address_parts[0]
-        port = int(address_parts[1])
-        return hostname, port
-
-    def _find_yarn_application_id(self, rm_client: ResourceManagerClient) -> str:
-        yarn_apps = rm_client.list_yarn_applications()
-        yarn_apps_count = len(yarn_apps)
-        if yarn_apps_count == 0:
-            raise ValueError("No running YARN applications found.")
-        elif yarn_apps_count > 1:
-            raise ValueError(f"Expected one running YARN application, but {yarn_apps_count} found.")
-        else:
-            return yarn_apps[0]["id"]
 
     def _set_table_env(self, execution_mode: str) -> None:
         if execution_mode == "batch":
