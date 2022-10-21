@@ -83,7 +83,7 @@ class Integrations(Magics):
         args = parse_argstring(self.flink_connect, line)
         try:
             self._flink_connect(args)
-        except Exception as e:
+        except Exception as e:  # noqa: B902
             print(e, file=sys.stderr)
 
     def _flink_connect(self, args: Any) -> None:
