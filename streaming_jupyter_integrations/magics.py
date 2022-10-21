@@ -83,7 +83,7 @@ class Integrations(Magics):
         args = parse_argstring(self.flink_connect, line)
         try:
             self._flink_connect(args)
-        except ValueError as e:
+        except Exception as e:
             print(e, file=sys.stderr)
 
     def _flink_connect(self, args: Any) -> None:
@@ -93,6 +93,8 @@ class Integrations(Magics):
         if execution_target == "local":
             self._flink_connect_local()
         elif execution_target == "remote":
+            if not args.remote_hostname or not args.remote_port:
+                raise ValueError("Remote execution target requires --remote-hostname and --remote-port parameters.")
             self._flink_connect_remote(args.remote_hostname, args.remote_port)
         elif execution_target == "yarn-session":
             self._flink_connect_yarn_session(args.resource_manager_hostname, args.resource_manager_port,

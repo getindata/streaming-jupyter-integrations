@@ -1,3 +1,4 @@
+import socket
 from typing import Any, Optional, Tuple
 
 from yarn_api_client.resource_manager import ResourceManager
@@ -5,9 +6,11 @@ from yarn_api_client.resource_manager import ResourceManager
 
 class ResourceManagerClient:
     def __init__(self, rm_hostname: Optional[str] = None, rm_port: Optional[int] = None):
-        self.rm_client = ResourceManager(
-            service_endpoints=[f"http://{rm_hostname}:{rm_port}"] if rm_hostname and rm_port else None
-        )
+        if rm_hostname is None:
+            rm_hostname = socket.getfqdn()
+        if rm_port is None:
+            rm_port = 8088
+        self.rm_client = ResourceManager(service_endpoints=[f"http://{rm_hostname}:{rm_port}"])
 
     def list_yarn_applications(self) -> Any:
         applications = self.rm_client.cluster_applications()
