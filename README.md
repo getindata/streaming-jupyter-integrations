@@ -87,8 +87,8 @@ Running Flink in `yarn-session` mode will connect to an existing Flink session c
 the hostname and port of the YARN Resource Manager (`--resource-manager-hostname` and `--resource-manager-port`).
 If Resource Manager address is not provided, the address is extracted from YARN configuration file
 `$HADOOP_CONF_DIR/yarn-site.xml`. You can also specify YARN applicationId (`--yarn-application-id`)
-to which the notebook will connect to. If `--yarn-application-id` is not specified, the notebook will connect to
-the only YARN application running on the cluster. If there are more than one running application, the command will fail.
+to which the notebook will connect to. If `--yarn-application-id` is not specified and there is one YARN application
+running on the cluster, the notebook will try to connect to it. Otherwise, it will  fail.
 
 Connecting to a remote Flink session cluster running on a remote YARN cluster:
 ```python
