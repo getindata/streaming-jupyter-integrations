@@ -39,8 +39,8 @@ ambiguous_regexps = {
 }
 
 
-class SafeDict(dict):
-    def __missing__(self, key):
+class SafeDict(Dict[Any, Any]):
+    def __missing__(self, key: str) -> str:
         return '{' + key + '}'
 
 
