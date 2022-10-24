@@ -104,3 +104,14 @@ class TestCellContentFormatter:
                 input_string=cell_input_text,
                 user_ns=TestCellContentFormatter.variables_in_kernel_context,
             ).substitute_user_variables()
+
+    def test_skip_substitution_if_not_variable(self):
+        """It should skip brackets if something is not variable"""
+        cell_input_text = (
+            "select * from {{ some_table_name }} v where v.id = 'abc{1,3}'"
+        )
+        enriched_cell = CellContentFormatter(
+            input_string=cell_input_text,
+            user_ns=TestCellContentFormatter.variables_in_kernel_context,
+        ).substitute_user_variables()
+        assert enriched_cell == "select * from table_name v where v.id = 'abc{1,3}'"
