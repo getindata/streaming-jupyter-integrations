@@ -2,6 +2,7 @@ import getpass
 import os
 import re
 import string
+import sys
 from typing import Any, Dict, List, Optional, cast
 
 
@@ -41,6 +42,8 @@ ambiguous_regexps = {
 
 class SafeDict(Dict[Any, Any]):
     def __missing__(self, key: str) -> str:
+        if any(c.isalpha() for c in key):
+            print(f"Variable {key} not found. The substitution will be skipped.", file=sys.stderr)
         return '{' + key + '}'
 
 
