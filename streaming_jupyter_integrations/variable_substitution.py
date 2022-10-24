@@ -2,6 +2,7 @@ import getpass
 import os
 import re
 import string
+import sys
 from typing import Any, Dict, List, Optional, cast
 
 
@@ -37,6 +38,14 @@ ambiguous_regexps = {
     r"\{\s+\{": (r"[^\}]*\}", _match_forwards),  # catch some attempted nesting cases
     r"\}\s+\}": (r"[^\{]*\{", _match_backwards),  # catch some attempted nesting cases
 }
+
+
+# We need to skip curly brackets if there's no variable within, it can be regexp etc
+class SafeDict(Dict[Any, Any]):
+    def __missing__(self, key: str) -> str:
+        if any(c.isalpha() for c in key):
+            print(f"Variable '{key}' not found. The substitution will be skipped.", file=sys.stderr)
+        return '{' + key + '}'
 
 
 class CellContentFormatter(string.Formatter):
@@ -96,7 +105,7 @@ class CellContentFormatter(string.Formatter):
     def _substitute_variables(self, escaped_string: str) -> str:
         try:
             merged_vars = {**self.user_ns, **self.hidden_vars}  # hidden_vars takes precedence
-            result = escaped_string.format(**merged_vars)
+            result = escaped_string.format_map(SafeDict(**merged_vars))
             self.hidden_vars.clear()  # ensure it gets wiped out after using
             return result
         except KeyError as error:

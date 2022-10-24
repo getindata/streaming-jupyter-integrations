@@ -1,10 +1,11 @@
+import contextlib
+import io
 from unittest.mock import patch
 
 import pytest
 
 from streaming_jupyter_integrations.variable_substitution import (
-    CellContentFormatter, NonExistentVariableException,
-    VariableSyntaxException)
+    CellContentFormatter, VariableSyntaxException)
 
 
 class TestCellContentFormatter:
@@ -88,13 +89,16 @@ class TestCellContentFormatter:
             assert not cell_content_formatter.hidden_vars  # is empty
 
     def test_non_existent_variable_use(self):
-        """It should throw NonExistentVariableException in case of undefined variable"""
+        """It should print error in case of undefined variable"""
         cell_input_text = "select * from {{ non_existent_variable }}"
-        with pytest.raises(NonExistentVariableException):
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
             CellContentFormatter(
                 input_string=cell_input_text,
                 user_ns=TestCellContentFormatter.variables_in_kernel_context,
             ).substitute_user_variables()
+
+        assert "Variable 'non_existent_variable' not found. The substitution will be skipped." == f.getvalue().strip()
 
     def test_wrong_variable_usage(self):
         """It should throw VariableSyntaxException for variable names without whitespaces"""
@@ -104,3 +108,14 @@ class TestCellContentFormatter:
                 input_string=cell_input_text,
                 user_ns=TestCellContentFormatter.variables_in_kernel_context,
             ).substitute_user_variables()
+
+    def test_skip_substitution_if_not_variable(self):
+        """It should skip brackets if something is not a variable"""
+        cell_input_text = (
+            "select * from {{ some_table_name }} v where v.id = 'abc{1,3}'"
+        )
+        enriched_cell = CellContentFormatter(
+            input_string=cell_input_text,
+            user_ns=TestCellContentFormatter.variables_in_kernel_context,
+        ).substitute_user_variables()
+        assert enriched_cell == "select * from table_name v where v.id = 'abc{1,3}'"

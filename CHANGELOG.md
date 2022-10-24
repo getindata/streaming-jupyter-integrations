@@ -6,6 +6,10 @@
 
 -   Show functions & change icon for views in `%flink_show_table_tree`
 
+### Fixed
+
+-   Skip curly brackets without variable
+
 ## [0.9.0] - 2022-10-20
 
 ### Added
