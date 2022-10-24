@@ -39,6 +39,11 @@ ambiguous_regexps = {
 }
 
 
+class SafeDict(dict):
+    def __missing__(self, key):
+        return '{' + key + '}'
+
+
 class CellContentFormatter(string.Formatter):
     def __init__(self, input_string: str, user_ns: Dict[Any, Any]):
         self.input_string = input_string
@@ -96,7 +101,7 @@ class CellContentFormatter(string.Formatter):
     def _substitute_variables(self, escaped_string: str) -> str:
         try:
             merged_vars = {**self.user_ns, **self.hidden_vars}  # hidden_vars takes precedence
-            result = escaped_string.format(**merged_vars)
+            result = escaped_string.format_map(SafeDict(**merged_vars))
             self.hidden_vars.clear()  # ensure it gets wiped out after using
             return result
         except KeyError as error:
