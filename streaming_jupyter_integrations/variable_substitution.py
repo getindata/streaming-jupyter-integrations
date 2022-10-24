@@ -40,10 +40,11 @@ ambiguous_regexps = {
 }
 
 
+# We need to skip curly brackets if there's no variable within, it can be regexp etc
 class SafeDict(Dict[Any, Any]):
     def __missing__(self, key: str) -> str:
         if any(c.isalpha() for c in key):
-            print(f"Variable {key} not found. The substitution will be skipped.", file=sys.stderr)
+            print(f"Variable '{key}' not found. The substitution will be skipped.", file=sys.stderr)
         return '{' + key + '}'
 
 

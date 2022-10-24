@@ -98,7 +98,7 @@ class TestCellContentFormatter:
                 user_ns=TestCellContentFormatter.variables_in_kernel_context,
             ).substitute_user_variables()
 
-        assert "Variable non_existent_variable not found. The substitution will be skipped." == f.getvalue().strip()
+        assert "Variable 'non_existent_variable' not found. The substitution will be skipped." == f.getvalue().strip()
 
     def test_wrong_variable_usage(self):
         """It should throw VariableSyntaxException for variable names without whitespaces"""
