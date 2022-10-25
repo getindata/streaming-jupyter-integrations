@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2022-10-25
+
 ### Added
 
 -   Support for execution targets: local, remote, yarn-session.
@@ -131,7 +133,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.1...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.10.0...HEAD
+
+[0.10.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.1...0.10.0
 
 [0.9.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.0...0.9.1
 
