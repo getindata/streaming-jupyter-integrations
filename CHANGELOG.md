@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Support for execution targets: local, remote, yarn-session.
+
 ## [0.9.1] - 2022-10-25
 
 ### Added

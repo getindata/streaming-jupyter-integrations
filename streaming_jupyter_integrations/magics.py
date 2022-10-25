@@ -36,6 +36,7 @@ from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
 from .sql_utils import inline_sql_in_cell, is_dml, is_dql
 from .variable_substitution import CellContentFormatter
+from .yarn import find_session_jm_address
 
 
 @magics_class
@@ -53,16 +54,6 @@ class Integrations(Magics):
             "--add-opens=java.base/java.util=ALL-UNNAMED "
             "--add-opens=java.base/java.lang=ALL-UNNAMED"
         )
-        global_conf = self.__read_global_config()
-        conf = self.__create_configuration_from_dict(global_conf)
-        conf.set_integer("rest.port", 8099)
-        conf.set_integer("parallelism.default", 1)
-        self.s_env = StreamExecutionEnvironment(
-            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(  # noqa: E501
-                conf._j_configuration
-            )
-        )
-        self._set_table_env()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.__load_plugins()
         self.interrupted = False
@@ -76,7 +67,81 @@ class Integrations(Magics):
         self.background_execution_in_progress = False
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
+
+    @line_magic
+    @magic_arguments()
+    @argument("-e", "--execution-mode", type=str, help="Flink execution mode", required=False,
+              default="streaming")
+    @argument("-t", "--execution-target", type=str, help="The target on which queries will be executed", required=False,
+              default="local")
+    @argument("-h", "--remote-hostname", type=str, help="Hostname of the remote JobManager", required=False)
+    @argument("-p", "--remote-port", type=int, help="Port of the remote JobManager", required=False)
+    @argument("-rmh", "--resource-manager-hostname", type=str, help="YARN Resource Manager hostname", required=False)
+    @argument("-rmp", "--resource-manager-port", type=int, help="YARN Resource Manager port", required=False)
+    @argument("-yid", "--yarn-application-id", type=str, help="Flink Session Cluster applicationId", required=False)
+    def flink_connect(self, line: str) -> None:
+        args = parse_argstring(self.flink_connect, line)
+        try:
+            self._flink_connect(args)
+        except Exception as e:  # noqa: B902
+            print(e, file=sys.stderr)
+
+    def _flink_connect(self, args: Any) -> None:
+        execution_mode = args.execution_mode
+        execution_target = args.execution_target
+
+        if execution_target == "local":
+            self._flink_connect_local()
+        elif execution_target == "remote":
+            if not args.remote_hostname or not args.remote_port:
+                raise ValueError("Remote execution target requires --remote-hostname and --remote-port parameters.")
+            self._flink_connect_remote(args.remote_hostname, args.remote_port)
+        elif execution_target == "yarn-session":
+            self._flink_connect_yarn_session(args.resource_manager_hostname, args.resource_manager_port,
+                                             args.yarn_application_id)
+        else:
+            raise ValueError(
+                f"Unknown execution mode. Expected 'local', 'remote' or 'yarn-session', actual '{execution_target}'.")
+
         self.__flink_execute_sql_file("init.sql")
+        self._set_table_env(execution_mode)
+        print(f"{execution_target} environment has been created.")
+
+    def _flink_connect_local(self) -> None:
+        global_conf = self.__read_global_config()
+        conf = self.__create_configuration_from_dict(global_conf)
+        conf.set_integer("rest.port", 8099)
+        conf.set_integer("parallelism.default", 1)
+        self.s_env = StreamExecutionEnvironment(
+            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(  # noqa: E501
+                conf._j_configuration
+            )
+        )
+
+    def _flink_connect_remote(self, hostname: str, port: int) -> None:
+        gateway = get_gateway()
+        empty_string_array = gateway.new_array(gateway.jvm.String, 0)
+        self.s_env = StreamExecutionEnvironment(
+            gateway.jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createRemoteEnvironment(
+                hostname, port, empty_string_array
+            )
+        )
+
+    def _flink_connect_yarn_session(self, rm_hostname: str, rm_port: int, yarn_application_id: str) -> None:
+        jm_hostname, jm_port = find_session_jm_address(rm_hostname, rm_port, yarn_application_id)
+        self._flink_connect_remote(jm_hostname, jm_port)
+
+    def _set_table_env(self, execution_mode: str) -> None:
+        if execution_mode == "batch":
+            self.st_env = StreamTableEnvironment.create(
+                stream_execution_environment=self.s_env,
+                environment_settings=EnvironmentSettings.new_instance().in_batch_mode().build(),
+            )
+        else:
+            self.st_env = StreamTableEnvironment.create(
+                stream_execution_environment=self.s_env,
+                environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
+            )
 
     @line_magic
     @magic_arguments()
@@ -541,18 +606,6 @@ class Integrations(Magics):
 
         column_icon = "key" if column_key else "columns"
         return Node(column_display, opened=False, icon=column_icon)
-
-    def _set_table_env(self) -> None:
-        if "FLINK_MODE" in os.environ and os.environ["FLINK_MODE"] == "batch":
-            self.st_env = StreamTableEnvironment.create(
-                stream_execution_environment=self.s_env,
-                environment_settings=EnvironmentSettings.new_instance().in_batch_mode().build(),
-            )
-        else:
-            self.st_env = StreamTableEnvironment.create(
-                stream_execution_environment=self.s_env,
-                environment_settings=EnvironmentSettings.new_instance().in_streaming_mode().build(),
-            )
 
 
 def load_ipython_extension(ipython: Any) -> None:

@@ -61,6 +61,7 @@ EXTRA_REQUIRE = {
         "pre-commit==2.15.0",
         "tox==3.21.1",
         "jupyter-packaging>=0.12.2",
+        "responses>=0.22.0",
     ]
 }
 

@@ -8,16 +8,107 @@
 
 Streaming Jupyter Integrations project includes a set of magics for interactively running _Flink SQL_  jobs in [Jupyter](https://jupyter.org/) Notebooks
 
+## Installation
+
 In order to actually use these magics, you must install our PIP package along `jupyterlab-lsp`:
 
 ```shell
 python3 -m pip install jupyterlab-lsp streaming-jupyter-integrations
 ```
 
-And then register in Jupyter with a running IPython in the first cell:
+## Usage
+
+Register in Jupyter with a running IPython in the first cell:
 
 ```python
 %load_ext streaming_jupyter_integrations.magics
+```
+
+Then you need to decide which _execution mode_ and _execution target_ to choose.
+
+```python
+%flink_connect --execution-mode [mode] --execution-target [target]
+```
+
+By default, the `streaming` execution mode and `local` execution target are used.
+
+```python
+%flink_connect
+```
+
+### Execution mode
+
+Currently, Flink supports two execution modes: _batch_ and _streaming_. Please see
+[Flink documentation](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/execution_mode/)
+for more details.
+
+In order to specify execution mode, add `--execution-mode` parameter, for instance:
+```python
+%flink_connect --execution-mode batch
+```
+
+### Execution target
+
+Streaming Jupyter Integrations supports 3 execution targets:
+* Local
+* Remote
+* YARN Session
+
+#### Local execution target
+
+Running Flink in `local` mode will start a MiniCluster in a local JVM with parallelism 1.
+
+In order to run Flink locally, use:
+```python
+%flink_connect --execution-target local
+```
+
+Alternatively, since the execution target is `local` by default, use:
+```python
+%flink_connect
+```
+
+#### Remote execution target
+
+Running Flink in remote mode will connect to an existing Flink session cluster. Besides specifying `--execution-target`
+to be `remote`, you also need to specify `--remote-hostname` and `--remote-port` pointing to Flink Job Manager's
+REST API address.
+
+```python
+%flink_connect \
+    --execution-target remote \
+    --remote-hostname example.com \
+    --remote-port 8888
+```
+
+#### YARN session execution target
+
+Running Flink in `yarn-session` mode will connect to an existing Flink session cluster running on YARN. You may specify
+the hostname and port of the YARN Resource Manager (`--resource-manager-hostname` and `--resource-manager-port`).
+If Resource Manager address is not provided, it is assumed that notebook runs on the same node as Resource Manager.
+You can also specify YARN applicationId (`--yarn-application-id`) to which the notebook will connect to.
+If `--yarn-application-id` is not specified and there is one YARN application running on the cluster, the notebook will
+try to connect to it. Otherwise, it will fail.
+
+Connecting to a remote Flink session cluster running on a remote YARN cluster:
+```python
+%flink_connect \
+    --execution-target yarn-session \
+    --resource-manager-hostname example.com \
+    --resource-manager-port 8888 \
+    --yarn-application-id application_1666172784500_0001
+```
+
+Connecting to a Flink session cluster running on a YARN cluster:
+```python
+%flink_connect \
+    --execution-target yarn-session \
+    --yarn-application-id application_1666172784500_0001
+```
+
+Connecting to a Flink session cluster running on a dedicated YARN cluster:
+```python
+%flink_connect --execution-target yarn-session
 ```
 
 ## Variables
@@ -45,14 +136,7 @@ CREATE TABLE MyUserTable (
    'password' = '${my_password}'
 );
 ```
-
-## Batch mode
-
-You can run Flink in batch mode by setting `FLINK_MODE` environment variable before loading magics.
-
-```ipython
-%env FLINK_MODE=batch
-```
+---
 
 ## Local development
 
