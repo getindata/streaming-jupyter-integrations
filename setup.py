@@ -8,7 +8,7 @@ from typing import List
 from setuptools import find_packages, setup
 from setuptools.command.install import install
 
-__version__ = "0.9.1"
+__version__ = "0.10.0"
 
 HERE = Path(__file__).parent.resolve()
 
@@ -61,6 +61,7 @@ EXTRA_REQUIRE = {
         "pre-commit==2.15.0",
         "tox==3.21.1",
         "jupyter-packaging>=0.12.2",
+        "responses>=0.22.0",
     ]
 }
 

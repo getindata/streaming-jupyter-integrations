@@ -1,6 +1,6 @@
 ipywidgets
 ipytree
-apache-flink==1.15.2
+apache-flink>=1.15.1,<1.16
 setuptools
 pandas
 ipython
@@ -10,3 +10,4 @@ wget
 sqlparse
 pyyaml
 types-PyYAML
+yarn-api-client
