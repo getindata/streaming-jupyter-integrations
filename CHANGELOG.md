@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.9.1] - 2022-10-25
+
+### Added
+
+-   Show functions & change icon for views in `%flink_show_table_tree`
+
+### Fixed
+
+-   Skip curly brackets without variable
+
 ## [0.9.0] - 2022-10-20
 
 ### Added
@@ -113,7 +123,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.1...HEAD
+
+[0.9.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.0...0.9.1
 
 [0.9.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.8.2...0.9.0
 
