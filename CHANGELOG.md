@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+-   Accept Apache Flink versions 1.15.X.
+
 ## [0.9.1] - 2022-10-25
 
 ### Added
