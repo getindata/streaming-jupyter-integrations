@@ -13,7 +13,7 @@ class ResourceManagerClient:
         self.rm_client = ResourceManager(service_endpoints=[f"http://{rm_hostname}:{rm_port}"])
 
     def list_yarn_applications(self) -> Any:
-        applications = self.rm_client.cluster_applications()
+        applications = self.rm_client.cluster_applications(states=["RUNNING"])
         if not applications or not applications.data or not applications.data["apps"]:
             return []
         return applications.data["apps"]["app"]

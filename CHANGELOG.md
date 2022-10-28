@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   In yarn-session execution target only RUNNING yarn applications are taken into account.
+
 ## [0.10.0] - 2022-10-25
 
 ### Added
