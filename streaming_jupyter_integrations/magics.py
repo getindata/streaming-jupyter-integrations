@@ -67,6 +67,7 @@ class Integrations(Magics):
         self.background_execution_in_progress = False
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
+        self.display_row_kind = False
 
     @line_magic
     @magic_arguments()
@@ -230,7 +231,11 @@ class Integrations(Magics):
             asyncio.run(task)
 
     @cell_magic
+    @magic_arguments()
+    @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
     def flink_execute_sql(self, line: str, cell: str) -> None:
+        args = parse_argstring(self.flink_execute_sql, line)
+        self.display_row_kind = args.display_row_kind
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return
@@ -307,6 +312,8 @@ class Integrations(Magics):
         """
 
         columns = execution_result.get_table_schema().get_field_names()
+        if self.display_row_kind:
+            columns = ["row_kind"] + columns
         df = pd.DataFrame(columns=columns)
         result_kind = execution_result.get_result_kind()
 
@@ -323,6 +330,8 @@ class Integrations(Magics):
                     # Explicit await for the same reason as in `__internal_execute_sql`
                     await asyncio.sleep(self.async_wait_s)
                     res = list(result)
+                    if self.display_row_kind:
+                        res = [result.get_row_kind()] + res
                     a_series = pd.Series(res, index=df.columns)
                     df = df.append(a_series, ignore_index=True)
                     rows_counter.value += 1

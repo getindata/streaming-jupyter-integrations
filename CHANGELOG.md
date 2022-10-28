@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## Added
+
+-   Add `row_kind` column to the results.
+
 ### Fixed
 
 -   In yarn-session execution target only RUNNING yarn applications are taken into account.
