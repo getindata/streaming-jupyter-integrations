@@ -74,8 +74,9 @@ class Integrations(Magics):
               default="streaming")
     @argument("-t", "--execution-target", type=str, help="The target on which queries will be executed", required=False,
               default="local")
-    @argument("-h", "--remote-hostname", type=str, help="Hostname of the remote JobManager", required=False)
-    @argument("-p", "--remote-port", type=int, help="Port of the remote JobManager", required=False)
+    @argument("-lp", "--local-port", type=int, help="Port of the local JobManager", required=False, default=8099)
+    @argument("-rh", "--remote-hostname", type=str, help="Hostname of the remote JobManager", required=False)
+    @argument("-rp", "--remote-port", type=int, help="Port of the remote JobManager", required=False)
     @argument("-rmh", "--resource-manager-hostname", type=str, help="YARN Resource Manager hostname", required=False)
     @argument("-rmp", "--resource-manager-port", type=int, help="YARN Resource Manager port", required=False)
     @argument("-yid", "--yarn-application-id", type=str, help="Flink Session Cluster applicationId", required=False)
@@ -91,7 +92,7 @@ class Integrations(Magics):
         execution_target = args.execution_target
 
         if execution_target == "local":
-            self._flink_connect_local()
+            self._flink_connect_local(args.local_port)
         elif execution_target == "remote":
             if not args.remote_hostname or not args.remote_port:
                 raise ValueError("Remote execution target requires --remote-hostname and --remote-port parameters.")
@@ -107,10 +108,10 @@ class Integrations(Magics):
         self._set_table_env(execution_mode)
         print(f"{execution_target} environment has been created.")
 
-    def _flink_connect_local(self) -> None:
+    def _flink_connect_local(self, port: int) -> None:
         global_conf = self.__read_global_config()
         conf = self.__create_configuration_from_dict(global_conf)
-        conf.set_integer("rest.port", 8099)
+        conf.set_integer("rest.port", port)
         conf.set_integer("parallelism.default", 1)
         self.s_env = StreamExecutionEnvironment(
             get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(  # noqa: E501

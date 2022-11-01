@@ -68,6 +68,14 @@ Alternatively, since the execution target is `local` by default, use:
 %flink_connect
 ```
 
+One can specify port of the local JobManager (8099 by default). This is useful especially if you run multiple
+Notebooks in a single JupyterLab.
+
+```python
+%flink_connect --execution-target local --local-port 8123
+```
+
+
 #### Remote execution target
 
 Running Flink in remote mode will connect to an existing Flink session cluster. Besides specifying `--execution-target`
