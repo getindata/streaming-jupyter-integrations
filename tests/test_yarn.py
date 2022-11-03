@@ -10,12 +10,14 @@ class TestYarn(unittest.TestCase):
     APP1_DATA = {
         "id": "application_1666172784500_0001",
         "name": "queries-session-cluster",
-        "amRPCAddress": "node-1.example.com:35331"
+        "amRPCAddress": "node-1.example.com:35331",
+        'state': 'RUNNING'
     }
     APP2_DATA = {
         "id": "application_1666172784500_0002",
         "name": "another-yarn-application",
-        "amRPCAddress": "node-1.example.com:46921"
+        "amRPCAddress": "node-1.example.com:46921",
+        'state': 'RUNNING'
     }
 
     @responses.activate
@@ -83,7 +85,7 @@ class TestYarn(unittest.TestCase):
     def _mock_cluster_apps_success(apps_list):
         responses.add(
             responses.GET,
-            "http://example.com:8123/ws/v1/cluster/apps",
+            "http://example.com:8123/ws/v1/cluster/apps?states=RUNNING",
             json={"apps": {"app": apps_list}},
             status=200,
         )
