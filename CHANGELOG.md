@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2022-11-03
+
 ### Added
 
 -   Add `row_kind` column to the results.
@@ -142,7 +144,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.11.0...HEAD
+
+[0.11.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.10.0...0.11.0
 
 [0.10.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.9.1...0.10.0
 
