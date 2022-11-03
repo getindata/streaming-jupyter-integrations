@@ -2,9 +2,10 @@
 
 ## [Unreleased]
 
-## Added
+### Added
 
 -   Add `row_kind` column to the results.
+-   Allow specifying port in local execution target (`--local-port`).
 
 ### Fixed
 
