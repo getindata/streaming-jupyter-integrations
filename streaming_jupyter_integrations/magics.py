@@ -103,7 +103,7 @@ class Integrations(Magics):
             raise ValueError(
                 f"Unknown execution mode. Expected 'local', 'remote' or 'yarn-session', actual '{execution_target}'.")
 
-        self.__flink_execute_sql_file("init.sql")
+        self.__flink_execute_sql_file("init.sql", display_row_kind=False)
         self._set_table_env(execution_mode)
         print(f"{execution_target} environment has been created.")
 
@@ -213,34 +213,38 @@ class Integrations(Magics):
     @argument(
         "-p", "--path", type=str, help="A path to a local config file", required=True
     )
+    @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
     def flink_execute_sql_file(self, line: str) -> None:
         args = parse_argstring(self.flink_execute_sql_file, line)
         path = args.path
         if os.path.exists(path):
-            self.__flink_execute_sql_file(path)
+            self.__flink_execute_sql_file(path, args.display_row_kind)
         else:
             print("File {} not found".format(path))
 
     @__interrupt_signal_decorator
-    def __flink_execute_sql_file_internal(self, statements: Iterable[str]) -> None:
+    def __flink_execute_sql_file_internal(self, statements: Iterable[str], display_row_kind: bool) -> None:
         for stmt in statements:
             if self.interrupted:
                 break
-            task = self.__internal_execute_sql(stmt)
+            task = self.__internal_execute_sql(stmt, display_row_kind)
             asyncio.run(task)
 
     @cell_magic
+    @magic_arguments()
+    @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
     def flink_execute_sql(self, line: str, cell: str) -> None:
+        args = parse_argstring(self.flink_execute_sql, line)
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return
 
         stmt = self.__enrich_cell(cell)
-        self.__flink_execute_sql_internal(stmt)
+        self.__flink_execute_sql_internal(stmt, args.display_row_kind)
 
     @__interrupt_signal_decorator
-    def __flink_execute_sql_internal(self, stmt: str) -> None:
-        task = self.__internal_execute_sql(stmt)
+    def __flink_execute_sql_internal(self, stmt: str, display_row_kind: bool) -> None:
+        task = self.__internal_execute_sql(stmt, display_row_kind)
         if is_dml(stmt) or is_dql(stmt):
             print(
                 "This job runs in a background, please either wait or interrupt its execution before continuing"
@@ -255,7 +259,7 @@ class Integrations(Magics):
             asyncio.run(task)
 
     # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
-    async def __internal_execute_sql(self, stmt: str) -> None:
+    async def __internal_execute_sql(self, stmt: str, display_row_kind: bool) -> None:
         print("Job starting...")
         execution_result = self.st_env.execute_sql(stmt)
         print("Job started")
@@ -271,7 +275,7 @@ class Integrations(Magics):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
                     print("Pulling query results...")
-                    await self.display_execution_result(execution_result)
+                    await self.display_execution_result(execution_result, display_row_kind)
                     return
                 else:
                     # if finished then return early even if the user interrupts after this
@@ -300,13 +304,15 @@ class Integrations(Magics):
         # usual happy path
         print(successful_execution_msg)
 
-    async def display_execution_result(self, execution_result: TableResult) -> pd.DataFrame:
+    async def display_execution_result(self, execution_result: TableResult, display_row_kind: bool) -> pd.DataFrame:
         """
         Displays the execution result and returns a dataframe containing all the results.
         Display is done in a stream-like fashion displaying the results as they come.
         """
 
         columns = execution_result.get_table_schema().get_field_names()
+        if display_row_kind:
+            columns = ["row_kind"] + columns
         df = pd.DataFrame(columns=columns)
         result_kind = execution_result.get_result_kind()
 
@@ -323,6 +329,8 @@ class Integrations(Magics):
                     # Explicit await for the same reason as in `__internal_execute_sql`
                     await asyncio.sleep(self.async_wait_s)
                     res = list(result)
+                    if display_row_kind:
+                        res = [result.get_row_kind()] + res
                     a_series = pd.Series(res, index=df.columns)
                     df = df.append(a_series, ignore_index=True)
                     rows_counter.value += 1
@@ -457,7 +465,7 @@ class Integrations(Magics):
         joined_cell = inline_sql_in_cell(enriched_cell)
         return joined_cell
 
-    def __flink_execute_sql_file(self, path: Union[str, os.PathLike[str]]) -> None:
+    def __flink_execute_sql_file(self, path: Union[str, os.PathLike[str]], display_row_kind: bool) -> None:
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return
@@ -471,7 +479,7 @@ class Integrations(Magics):
         self.background_execution_in_progress = True
         self.deployment_bar.show_deployment_bar()
         try:
-            self.__flink_execute_sql_file_internal(statements)
+            self.__flink_execute_sql_file_internal(statements, display_row_kind)
         finally:
             self.background_execution_in_progress = False
 
