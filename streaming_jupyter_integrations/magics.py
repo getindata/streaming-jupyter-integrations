@@ -4,6 +4,7 @@ import asyncio
 import os
 import pathlib
 import signal
+import subprocess
 import sys
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, Tuple, Union, cast
@@ -45,15 +46,7 @@ class Integrations(Magics):
         super(Integrations, self).__init__(shell)
         self._secrets: Dict[str, str] = {}
         self._load_secrets_from_scli_config()
-        print(
-            "Set env variable JAVA_TOOL_OPTIONS="
-            "'--add-opens=java.base/java.util=ALL-UNNAMED "
-            "--add-opens=java.base/java.lang=ALL-UNNAMED'"
-        )
-        os.environ["JAVA_TOOL_OPTIONS"] = (
-            "--add-opens=java.base/java.util=ALL-UNNAMED "
-            "--add-opens=java.base/java.lang=ALL-UNNAMED"
-        )
+        self._set_java_options()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.__load_plugins()
         self.interrupted = False
@@ -67,6 +60,23 @@ class Integrations(Magics):
         self.background_execution_in_progress = False
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
+
+    def _set_java_options(self) -> None:
+        if not self._is_java_8():
+            print(
+                "Set env variable JAVA_TOOL_OPTIONS="
+                "'--add-opens=java.base/java.util=ALL-UNNAMED "
+                "--add-opens=java.base/java.lang=ALL-UNNAMED'"
+            )
+            os.environ["JAVA_TOOL_OPTIONS"] = (
+                "--add-opens=java.base/java.util=ALL-UNNAMED "
+                "--add-opens=java.base/java.lang=ALL-UNNAMED"
+            )
+
+    @staticmethod
+    def _is_java_8() -> bool:
+        java_version_out = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT).decode('utf-8')
+        return "1.8.0_" in java_version_out.splitlines()[0]
 
     @line_magic
     @magic_arguments()
