@@ -6,6 +6,7 @@
 
 -   Support Java 8.
 -   Parallelism argument for flink_execute_sql.
+-   Add `%flink_execute` and `%flink_execute_file` command which allows to execute low-level Python Flink API.
 
 ## Fixed
 
