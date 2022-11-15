@@ -124,8 +124,7 @@ class Integrations(Magics):
         conf.set_integer("rest.port", port)
         conf.set_integer("parallelism.default", 1)
         self.s_env = StreamExecutionEnvironment(
-            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(
-                # noqa: E501
+            get_gateway().jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(  # noqa: E501
                 conf._j_configuration
             )
         )
