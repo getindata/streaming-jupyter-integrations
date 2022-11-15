@@ -244,8 +244,12 @@ class Integrations(Magics):
     @cell_magic
     @magic_arguments()
     @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
+    @argument("--parallelism", "-par", type=int, help="Flink parallelism to use when running the SQL", required=False, default=1)
     def flink_execute_sql(self, line: str, cell: str) -> None:
         args = parse_argstring(self.flink_execute_sql, line)
+        parallelism = args.parallelism
+        self.s_env.set_parallelism(parallelism)
+
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return

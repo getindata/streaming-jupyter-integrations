@@ -4,6 +4,10 @@
 
 ### Added
 
+-   Parallelism argument for flink_execute_sql.
+
+### Added
+
 -   Support Java 8.
 
 ## [0.11.0] - 2022-11-03
