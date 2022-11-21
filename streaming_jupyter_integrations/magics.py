@@ -245,7 +245,7 @@ class Integrations(Magics):
     @cell_magic
     @magic_arguments()
     @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
-    @argument("--parallelism", "-par", type=int, help="Flink parallelism to use when running the SQL", required=False,
+    @argument("--parallelism", "-p", type=int, help="Flink parallelism to use when running the SQL", required=False,
               default=1)
     def flink_execute_sql(self, line: str, cell: str) -> None:
         args = parse_argstring(self.flink_execute_sql, line)
