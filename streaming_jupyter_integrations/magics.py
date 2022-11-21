@@ -29,6 +29,7 @@ from pyflink.java_gateway import get_gateway
 from pyflink.table import (EnvironmentSettings, ResultKind,
                            StreamTableEnvironment, TableResult)
 
+from .cast_utils import cast_timestamp_ltz_to_string
 from .config_utils import load_config_file
 from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
@@ -272,7 +273,13 @@ class Integrations(Magics):
     # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
     async def __internal_execute_sql(self, stmt: str, display_row_kind: bool) -> None:
         print("Job starting...")
-        execution_result = self.st_env.execute_sql(stmt)
+        # Workaround - Python API does not work well with TIMESTAMP_LTZ type. If the output table contains the field,
+        # cast it to string first.
+        if not is_dql(stmt):
+            execution_result = self.st_env.execute_sql(stmt)
+        else:
+            execution_table = self.st_env.sql_query(stmt)
+            execution_result = cast_timestamp_ltz_to_string(self.st_env, execution_table).execute()
         print("Job started")
         successful_execution_msg = "Execution successful"
 

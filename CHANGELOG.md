@@ -6,6 +6,10 @@
 
 -   Support Java 8.
 
+## Fixed
+
+-   Add a workaround for displaying `TIMESTAMP_LTZ` field.
+
 ## [0.11.0] - 2022-11-03
 
 ### Added
