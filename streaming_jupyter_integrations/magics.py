@@ -217,6 +217,7 @@ class Integrations(Magics):
                 method(self, *method_args, **method_kwargs)
             finally:
                 signal.signal(signal.SIGINT, original_sigint)
+
         return _impl
 
     @line_magic
@@ -244,8 +245,12 @@ class Integrations(Magics):
     @cell_magic
     @magic_arguments()
     @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
+    @argument("--parallelism", "-p", type=int, help="Flink parallelism to use when running the SQL", required=False,
+              default=1)
     def flink_execute_sql(self, line: str, cell: str) -> None:
         args = parse_argstring(self.flink_execute_sql, line)
+        self.s_env.set_parallelism(args.parallelism)
+
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return
@@ -498,8 +503,8 @@ class Integrations(Magics):
         pipeline_classpaths = "pipeline.classpaths"
         current_classpaths = (
             self.st_env.get_config()
-                .get_configuration()
-                .get_string(pipeline_classpaths, "")
+            .get_configuration()
+            .get_string(pipeline_classpaths, "")
         )
         new_classpath = (
             f"{current_classpaths};{classpath_to_add}"
