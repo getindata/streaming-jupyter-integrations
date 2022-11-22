@@ -7,6 +7,10 @@
 -   Support Java 8.
 -   Parallelism argument for flink_execute_sql.
 
+## Fixed
+
+-   Add a workaround for displaying `TIMESTAMP_LTZ` field.
+
 ## [0.11.0] - 2022-11-03
 
 ### Added
