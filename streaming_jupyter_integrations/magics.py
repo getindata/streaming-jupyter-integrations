@@ -27,7 +27,7 @@ from pyflink.common.types import Row
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway
 from pyflink.table import (EnvironmentSettings, ResultKind,
-                           StreamTableEnvironment, TableResult)
+                           StreamTableEnvironment, Table, TableResult)
 
 from .cast_utils import cast_timestamp_ltz_to_string
 from .config_utils import load_config_file
@@ -285,7 +285,9 @@ class Integrations(Magics):
             # If execution_output is undefined, it means that the cell contains only definitions that will be used
             # in the following cells. Nothing to display.
             return
-        if isinstance(execution_output, TableResult):
+        if isinstance(execution_output, Table):
+            await self.__pull_results(execution_output.execute(), display_row_kind, True)
+        elif isinstance(execution_output, TableResult):
             await self.__pull_results(execution_output, display_row_kind, True)
         elif isinstance(execution_output, DataStream):
             execution_output = self.st_env.from_data_stream(execution_output).execute()
