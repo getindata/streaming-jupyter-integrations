@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2022-11-30
+
 ### Added
 
 -   Support Java 8.
@@ -154,7 +156,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.11.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.0...HEAD
+
+[0.12.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.11.0...0.12.0
 
 [0.11.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.10.0...0.11.0
 
