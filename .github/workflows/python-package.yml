@@ -38,7 +38,7 @@ jobs:
 
       - name: Test with tox
         run: |
-          tox -e py38
+          tox -e py
 
       - name: Wheel
         run: |

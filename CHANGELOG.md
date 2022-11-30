@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2022-11-30
+
+### Added
+
+-   Support Java 8.
+-   Parallelism argument for flink_execute_sql.
+-   Add `%flink_execute` and `%flink_execute_file` command which allows to execute low-level Python Flink API.
+
+### Fixed
+
+-   Add a workaround for displaying `TIMESTAMP_LTZ` field.
+
 ## [0.11.0] - 2022-11-03
 
 ### Added
@@ -144,7 +156,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.11.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.0...HEAD
+
+[0.12.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.11.0...0.12.0
 
 [0.11.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.10.0...0.11.0
 

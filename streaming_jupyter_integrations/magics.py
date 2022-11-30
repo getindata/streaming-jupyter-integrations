@@ -4,6 +4,7 @@ import asyncio
 import os
 import pathlib
 import signal
+import subprocess
 import sys
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, Tuple, Union, cast
@@ -23,11 +24,12 @@ from jupyter_core.paths import jupyter_config_dir
 from py4j.protocol import Py4JJavaError
 from pyflink.common import Configuration
 from pyflink.common.types import Row
-from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.datastream import DataStream, StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway
 from pyflink.table import (EnvironmentSettings, ResultKind,
-                           StreamTableEnvironment, TableResult)
+                           StreamTableEnvironment, Table, TableResult)
 
+from .cast_utils import cast_timestamp_ltz_to_string
 from .config_utils import load_config_file
 from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
@@ -45,15 +47,7 @@ class Integrations(Magics):
         super(Integrations, self).__init__(shell)
         self._secrets: Dict[str, str] = {}
         self._load_secrets_from_scli_config()
-        print(
-            "Set env variable JAVA_TOOL_OPTIONS="
-            "'--add-opens=java.base/java.util=ALL-UNNAMED "
-            "--add-opens=java.base/java.lang=ALL-UNNAMED'"
-        )
-        os.environ["JAVA_TOOL_OPTIONS"] = (
-            "--add-opens=java.base/java.util=ALL-UNNAMED "
-            "--add-opens=java.base/java.lang=ALL-UNNAMED"
-        )
+        self._set_java_options()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.__load_plugins()
         self.interrupted = False
@@ -67,6 +61,23 @@ class Integrations(Magics):
         self.background_execution_in_progress = False
         # Enables nesting blocking async tasks
         nest_asyncio.apply()
+
+    def _set_java_options(self) -> None:
+        if not self._is_java_8():
+            print(
+                "Set env variable JAVA_TOOL_OPTIONS="
+                "'--add-opens=java.base/java.util=ALL-UNNAMED "
+                "--add-opens=java.base/java.lang=ALL-UNNAMED'"
+            )
+            os.environ["JAVA_TOOL_OPTIONS"] = (
+                "--add-opens=java.base/java.util=ALL-UNNAMED "
+                "--add-opens=java.base/java.lang=ALL-UNNAMED"
+            )
+
+    @staticmethod
+    def _is_java_8() -> bool:
+        java_version_out = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT).decode('utf-8')
+        return "1.8.0_" in java_version_out.splitlines()[0]
 
     @line_magic
     @magic_arguments()
@@ -106,7 +117,16 @@ class Integrations(Magics):
 
         self.__flink_execute_sql_file("init.sql", display_row_kind=False)
         self._set_table_env(execution_mode)
+        self._initialize_ds_exec_variables()
         print(f"{execution_target} environment has been created.")
+
+    def _initialize_ds_exec_variables(self) -> None:
+        # Expose only execution environment references.
+        self.__ds_exec_globals: Dict[str, Any] = {}
+        self.__ds_exec_locals = {
+            "table_env": self.st_env,
+            "stream_env": self.s_env
+        }
 
     def _flink_connect_local(self, port: int) -> None:
         global_conf = self.__read_global_config()
@@ -207,6 +227,7 @@ class Integrations(Magics):
                 method(self, *method_args, **method_kwargs)
             finally:
                 signal.signal(signal.SIGINT, original_sigint)
+
         return _impl
 
     @line_magic
@@ -234,8 +255,56 @@ class Integrations(Magics):
     @cell_magic
     @magic_arguments()
     @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
+    @argument("--parallelism", "-p", type=int, help="Flink parallelism to use when running the code", required=False,
+              default=1)
+    def flink_execute(self, line: str, cell: str) -> None:
+        args = parse_argstring(self.flink_execute, line)
+        self.s_env.set_parallelism(args.parallelism)
+        if self.background_execution_in_progress:
+            self.__retract_user_as_something_is_executing_in_background()
+            return
+        self.___flink_execute_internal(cell, args.display_row_kind)
+
+    @__interrupt_signal_decorator
+    def ___flink_execute_internal(self, stmt: str, display_row_kind: bool) -> None:
+        task = self.__flink_execute_internal(stmt, display_row_kind)
+        print("This job runs in a background, please either wait or interrupt its execution before continuing")
+        self.background_execution_in_progress = True
+        self.deployment_bar.show_deployment_bar()
+        asyncio.create_task(task).add_done_callback(self.__handle_done)
+
+    async def __flink_execute_internal(self, stmt: str, display_row_kind: bool) -> None:
+        print("Job starting...")
+        # execution_output is a special variable, clear it before running the code.
+        if "execution_output" in self.__ds_exec_locals:
+            del self.__ds_exec_locals["execution_output"]
+        exec(stmt, self.__ds_exec_globals, self.__ds_exec_locals)
+        execution_output = self.__ds_exec_locals.get("execution_output")
+        print("Job started")
+        if execution_output is None:
+            # If execution_output is undefined, it means that the cell contains only definitions that will be used
+            # in the following cells. Nothing to display.
+            return
+        if isinstance(execution_output, Table):
+            await self.__pull_results(execution_output.execute(), display_row_kind, True)
+        elif isinstance(execution_output, TableResult):
+            await self.__pull_results(execution_output, display_row_kind, True)
+        elif isinstance(execution_output, DataStream):
+            execution_output = self.st_env.from_data_stream(execution_output).execute()
+            await self.__pull_results(execution_output, display_row_kind, True)
+        else:
+            print(f"Unexpected type of 'execution_output'. Actual {type(execution_output)}, expected either "
+                  "TableResult or DataStream.", file=sys.stderr)
+
+    @cell_magic
+    @magic_arguments()
+    @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
+    @argument("--parallelism", "-p", type=int, help="Flink parallelism to use when running the SQL", required=False,
+              default=1)
     def flink_execute_sql(self, line: str, cell: str) -> None:
         args = parse_argstring(self.flink_execute_sql, line)
+        self.s_env.set_parallelism(args.parallelism)
+
         if self.background_execution_in_progress:
             self.__retract_user_as_something_is_executing_in_background()
             return
@@ -262,17 +331,25 @@ class Integrations(Magics):
     # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
     async def __internal_execute_sql(self, stmt: str, display_row_kind: bool) -> None:
         print("Job starting...")
-        execution_result = self.st_env.execute_sql(stmt)
+        # Workaround - Python API does not work well with TIMESTAMP_LTZ type. If the output table contains the field,
+        # cast it to string first.
+        if not is_dql(stmt):
+            execution_result = self.st_env.execute_sql(stmt)
+        else:
+            execution_table = self.st_env.sql_query(stmt)
+            execution_result = cast_timestamp_ltz_to_string(self.st_env, execution_table).execute()
         print("Job started")
-        successful_execution_msg = "Execution successful"
+        await self.__pull_results(execution_result, display_row_kind, is_dql(stmt))
 
+    async def __pull_results(self, execution_result: TableResult, display_row_kind: bool,
+                             display_results: bool) -> None:
         # active polling
         while not self.interrupted:
             try:
                 # Explicit await is needed to unblock the main thread to pick up other tasks.
                 # In Jupyter's main execution pool there is only one worker thread.
                 await asyncio.sleep(self.async_wait_s)
-                if is_dql(stmt):
+                if display_results:
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
                     print("Pulling query results...")
@@ -282,7 +359,7 @@ class Integrations(Magics):
                     # if finished then return early even if the user interrupts after this
                     # the actual invocation has already finished
                     execution_result.wait(self.wait_timeout_ms)
-                    print(successful_execution_msg)
+                    print("Execution successful")
                     return
             except Py4JJavaError as err:
                 # consume timeout error or rethrow any other
@@ -303,7 +380,7 @@ class Integrations(Magics):
             return
 
         # usual happy path
-        print(successful_execution_msg)
+        print("Execution successful")
 
     async def display_execution_result(self, execution_result: TableResult, display_row_kind: bool) -> pd.DataFrame:
         """
@@ -484,12 +561,39 @@ class Integrations(Magics):
         finally:
             self.background_execution_in_progress = False
 
+    @line_magic
+    @magic_arguments()
+    @argument("-p", "--path", type=str, help="A path to a local file", required=True)
+    @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
+    def flink_execute_file(self, line: str) -> None:
+        args = parse_argstring(self.flink_execute_file, line)
+        path = args.path
+        if os.path.exists(path):
+            self.__flink_execute_file(path, args.display_row_kind)
+        else:
+            print("File {} not found".format(path))
+
+    def __flink_execute_file(self, path: Union[str, os.PathLike[str]], display_row_kind: bool) -> None:
+        if self.background_execution_in_progress:
+            self.__retract_user_as_something_is_executing_in_background()
+            return
+
+        with open(path, "r") as f:
+            stmt = f.read()
+
+        self.background_execution_in_progress = True
+        self.deployment_bar.show_deployment_bar()
+        try:
+            self.___flink_execute_internal(stmt, display_row_kind=display_row_kind)
+        finally:
+            self.background_execution_in_progress = False
+
     def __extend_classpath(self, classpath_to_add: str) -> None:
         pipeline_classpaths = "pipeline.classpaths"
         current_classpaths = (
             self.st_env.get_config()
-                .get_configuration()
-                .get_string(pipeline_classpaths, "")
+            .get_configuration()
+            .get_string(pipeline_classpaths, "")
         )
         new_classpath = (
             f"{current_classpaths};{classpath_to_add}"
