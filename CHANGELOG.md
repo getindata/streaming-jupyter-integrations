@@ -8,7 +8,7 @@
 -   Parallelism argument for flink_execute_sql.
 -   Add `%flink_execute` and `%flink_execute_file` command which allows to execute low-level Python Flink API.
 
-## Fixed
+### Fixed
 
 -   Add a workaround for displaying `TIMESTAMP_LTZ` field.
 
