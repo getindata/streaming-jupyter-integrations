@@ -144,6 +144,39 @@ CREATE TABLE MyUserTable (
    'password' = '${my_password}'
 );
 ```
+
+### `%%flink_execute` command
+
+The command allows to use Python DataStream API and Table API. There are two handles exposed for each API:
+`stream_env` and `table_env`, respectively.
+
+Table API example:
+```python
+%%flink_execute
+query = """
+    SELECT   user_id, COUNT(*)
+    FROM     orders
+    GROUP BY user_id
+"""
+execution_output = table_env.execute_sql(query)
+```
+
+When Table API is used, the final result has to be assigned to `execution_output` variable.
+
+DataStream API example:
+```python
+%%flink_execute
+from pyflink.common.typeinfo import Types
+
+execution_output = stream_env.from_collection(
+    collection=[(1, 'aaa'), (2, 'bb'), (3, 'cccc')],
+    type_info=Types.ROW([Types.INT(), Types.STRING()])
+)
+```
+
+When DataStream API is used, the final result has to be assigned to `execution_output` variable. Please note that
+the pipeline does not end with `.execute()`, the execution is triggered by the Jupyter magics under the hood.
+
 ---
 
 ## Local development
