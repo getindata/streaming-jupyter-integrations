@@ -21,6 +21,9 @@ RUN source ~/.nvm/nvm.sh && \
 
 RUN pip install jupyterlab-lsp "nbclassic>=0.2.8"
 
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+
 COPY . ./
 RUN source ~/.nvm/nvm.sh && \
     pip install .
