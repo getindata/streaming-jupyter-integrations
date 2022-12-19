@@ -46,6 +46,10 @@ def is_dml(sql: str) -> bool:
     return __first_token_is_keyword(sql, DML_KEYWORDS)
 
 
+def is_query(sql: str) -> bool:
+    return __first_token_is_keyword(sql, QUERY_KEYWORDS)
+
+
 def is_dql(sql: str) -> bool:
     return __first_token_is_keyword(sql, DQL_KEYWORDS)
 

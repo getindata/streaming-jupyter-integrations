@@ -36,7 +36,7 @@ from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import inline_sql_in_cell, is_dml, is_dql
+from .sql_utils import inline_sql_in_cell, is_dml, is_dql, is_query
 from .variable_substitution import CellContentFormatter
 from .yarn import find_session_jm_address
 
@@ -333,11 +333,11 @@ class Integrations(Magics):
         print("Job starting...")
         # Workaround - Python API does not work well with TIMESTAMP_LTZ type. If the output table contains the field,
         # cast it to string first.
-        if not is_dql(stmt):
-            execution_result = self.st_env.execute_sql(stmt)
-        else:
+        if is_query(stmt):
             execution_table = self.st_env.sql_query(stmt)
             execution_result = cast_timestamp_ltz_to_string(self.st_env, execution_table).execute()
+        else:
+            execution_result = self.st_env.execute_sql(stmt)
         print("Job started")
         await self.__pull_results(execution_result, display_row_kind, is_dql(stmt))
 
