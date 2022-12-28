@@ -7,7 +7,7 @@ import signal
 import subprocess
 import sys
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union, cast
 
 import nest_asyncio
 import pandas as pd
@@ -36,7 +36,8 @@ from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import inline_sql_in_cell, is_dml, is_dql, is_query
+from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_query,
+                        shows_metadata)
 from .variable_substitution import CellContentFormatter
 from .yarn import find_session_jm_address
 
@@ -341,10 +342,13 @@ class Integrations(Magics):
         else:
             execution_result = self.st_env.execute_sql(stmt)
         print("Job started")
-        await self.__pull_results(execution_result, display_row_kind, is_dql(stmt))
+        # Pandas lib truncates view if the number of results exceeds the limit.
+        # If the query shows metadata, e.g. list of tables or list of columns, then no limit is applied.
+        display_limit = None if shows_metadata(stmt) else 100
+        await self.__pull_results(execution_result, display_row_kind, is_dql(stmt), display_limit)
 
     async def __pull_results(self, execution_result: TableResult, display_row_kind: bool,
-                             display_results: bool) -> None:
+                             display_results: bool, display_limit: Optional[int] = 100) -> None:
         # active polling
         while not self.interrupted:
             try:
@@ -355,7 +359,7 @@ class Integrations(Magics):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
                     print("Pulling query results...")
-                    await self.display_execution_result(execution_result, display_row_kind)
+                    await self.display_execution_result(execution_result, display_row_kind, display_limit)
                     return
                 else:
                     # if finished then return early even if the user interrupts after this
@@ -384,7 +388,8 @@ class Integrations(Magics):
         # usual happy path
         print("Execution successful")
 
-    async def display_execution_result(self, execution_result: TableResult, display_row_kind: bool) -> pd.DataFrame:
+    async def display_execution_result(self, execution_result: TableResult, display_row_kind: bool,
+                                       display_limit: Optional[int]) -> pd.DataFrame:
         """
         Displays the execution result and returns a dataframe containing all the results.
         Display is done in a stream-like fashion displaying the results as they come.
@@ -393,6 +398,7 @@ class Integrations(Magics):
         columns = execution_result.get_table_schema().get_field_names()
         if display_row_kind:
             columns = ["row_kind"] + columns
+        pd.set_option("display.max_rows", display_limit)
         df = pd.DataFrame(columns=columns)
         result_kind = execution_result.get_result_kind()
 
