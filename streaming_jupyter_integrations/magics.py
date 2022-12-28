@@ -36,8 +36,8 @@ from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_query,
-                        shows_metadata)
+from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_metadata_query,
+                        is_query)
 from .variable_substitution import CellContentFormatter
 from .yarn import find_session_jm_address
 
@@ -344,7 +344,7 @@ class Integrations(Magics):
         print("Job started")
         # Pandas lib truncates view if the number of results exceeds the limit.
         # If the query shows metadata, e.g. list of tables or list of columns, then no limit is applied.
-        display_limit = None if shows_metadata(stmt) else 100
+        display_limit = None if is_metadata_query(stmt) else 100
         await self.__pull_results(execution_result, display_row_kind, is_dql(stmt), display_limit)
 
     async def __pull_results(self, execution_result: TableResult, display_row_kind: bool,

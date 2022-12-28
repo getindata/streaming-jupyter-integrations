@@ -58,7 +58,7 @@ def is_dql(sql: str) -> bool:
     return __first_token_is_keyword(sql, DQL_KEYWORDS)
 
 
-def shows_metadata(sql: str) -> bool:
+def is_metadata_query(sql: str) -> bool:
     return __first_token_is_keyword(sql, METADATA_KEYWORDS)
 
 
