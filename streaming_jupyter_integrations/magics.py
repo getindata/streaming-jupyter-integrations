@@ -405,7 +405,9 @@ class Integrations(Magics):
                 display_handle = None
                 for result in results:
                     # Explicit await for the same reason as in `__internal_execute_sql`
-                    await asyncio.sleep(self.async_wait_s)
+                    if rows_counter.value % 25 == 0:
+                        # Sleeping for each row slows down showing the results significantly.
+                        await asyncio.sleep(self.async_wait_s)
                     res = list(result)
                     if display_row_kind:
                         res = [result.get_row_kind()] + res
