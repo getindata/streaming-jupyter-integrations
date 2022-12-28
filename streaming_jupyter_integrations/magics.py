@@ -30,7 +30,7 @@ from pyflink.table import (EnvironmentSettings, ResultKind,
                            StreamTableEnvironment, Table, TableResult)
 
 from .cast_utils import cast_timestamp_ltz_to_string
-from .config_utils import load_config_file
+from .config_utils import load_config_file, read_flink_config_file
 from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
@@ -129,7 +129,7 @@ class Integrations(Magics):
         }
 
     def _flink_connect_local(self, port: int) -> None:
-        global_conf = self.__read_global_config()
+        global_conf = read_flink_config_file()
         conf = self.__create_configuration_from_dict(global_conf)
         conf.set_integer("rest.port", port)
         conf.set_integer("parallelism.default", 1)
@@ -140,7 +140,7 @@ class Integrations(Magics):
         )
 
     def _flink_connect_remote(self, hostname: str, port: int) -> None:
-        global_conf = self.__read_global_config()
+        global_conf = read_flink_config_file()
         conf = self.__create_configuration_from_dict(global_conf)
         gateway = get_gateway()
         empty_string_array = gateway.new_array(gateway.jvm.String, 0)
@@ -622,28 +622,6 @@ class Integrations(Magics):
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
         print("Please wait for the previously submitted task to finish or cancel it.")
-
-    @staticmethod
-    def __read_global_config() -> Dict[str, Any]:
-        if "FLINK_CONF_DIR" in os.environ:
-            config_path = os.path.join(os.environ["FLINK_CONF_DIR"], "flink-conf.yaml")
-            return Integrations.__read_flink_conf_yaml(config_path)
-        elif "FLINK_HOME" in os.environ:
-            config_path = os.path.join(os.environ["FLINK_HOME"], "conf", "flink-conf.yaml")
-            return Integrations.__read_flink_conf_yaml(config_path)
-        else:
-            print("Neither FLINK_CONF_DIR nor FLINK_HOME environment variable is set, reading flink-conf skipped.")
-        return {}
-
-    @staticmethod
-    def __read_flink_conf_yaml(file_path: str) -> Dict[str, Any]:
-        with open(file_path, 'r') as stream:
-            try:
-                parsed_yaml = yaml.safe_load(stream)
-                return parsed_yaml
-            except yaml.YAMLError as exc:
-                print(exc)
-                return {}
 
     @staticmethod
     def __create_configuration_from_dict(new_values: Dict[str, Any]) -> Configuration:
