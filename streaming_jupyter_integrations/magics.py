@@ -140,11 +140,13 @@ class Integrations(Magics):
         )
 
     def _flink_connect_remote(self, hostname: str, port: int) -> None:
+        global_conf = self.__read_global_config()
+        conf = self.__create_configuration_from_dict(global_conf)
         gateway = get_gateway()
         empty_string_array = gateway.new_array(gateway.jvm.String, 0)
         self.s_env = StreamExecutionEnvironment(
             gateway.jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createRemoteEnvironment(
-                hostname, port, empty_string_array
+                hostname, port, conf._j_configuration, empty_string_array
             )
         )
 
@@ -623,16 +625,25 @@ class Integrations(Magics):
 
     @staticmethod
     def __read_global_config() -> Dict[str, Any]:
-        if "FLINK_HOME" in os.environ:
-            with open(os.path.join(os.environ["FLINK_HOME"], "conf", "flink-conf.yaml"), 'r') as stream:
-                try:
-                    parsed_yaml = yaml.safe_load(stream)
-                    return parsed_yaml
-                except yaml.YAMLError as exc:
-                    print(exc)
+        if "FLINK_CONF_DIR" in os.environ:
+            config_path = os.path.join(os.environ["FLINK_CONF_DIR"], "flink-conf.yaml")
+            return Integrations.__read_flink_conf_yaml(config_path)
+        elif "FLINK_HOME" in os.environ:
+            config_path = os.path.join(os.environ["FLINK_HOME"], "conf", "flink-conf.yaml")
+            return Integrations.__read_flink_conf_yaml(config_path)
         else:
-            print("FLINK_HOME environment variable is not set, reading flink-conf skipped")
+            print("Neither FLINK_CONF_DIR nor FLINK_HOME environment variable is set, reading flink-conf skipped.")
         return {}
+
+    @staticmethod
+    def __read_flink_conf_yaml(file_path: str) -> Dict[str, Any]:
+        with open(file_path, 'r') as stream:
+            try:
+                parsed_yaml = yaml.safe_load(stream)
+                return parsed_yaml
+            except yaml.YAMLError as exc:
+                print(exc)
+                return {}
 
     @staticmethod
     def __create_configuration_from_dict(new_values: Dict[str, Any]) -> Configuration:
