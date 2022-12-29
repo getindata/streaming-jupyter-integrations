@@ -56,7 +56,7 @@ class Integrations(Magics):
         self.wait_timeout_ms = 60 * 60 * 1000  # 1H
         # 20ms
         self.async_wait_s = 2e-2
-        self.result_display_sleep_step = 25
+        self.display_results_batch_size = 25
         Integrations.__enable_sql_syntax_highlighting()
         self.deployment_bar = DeploymentBar(interrupt_callback=self.__interrupt_execute)
         # Indicates whether a job is executing on the Flink cluster in the background
@@ -407,7 +407,7 @@ class Integrations(Magics):
                 display_handle = None
                 for result in results:
                     # Explicit await for the same reason as in `__internal_execute_sql`
-                    if rows_counter.value % self.result_display_sleep_step == 0:
+                    if rows_counter.value % self.display_results_batch_size == 0:
                         # Sleeping for each row slows down showing the results significantly.
                         await asyncio.sleep(self.async_wait_s)
                     res = list(result)
