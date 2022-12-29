@@ -6,6 +6,7 @@
 
 -   Fix execution of SHOW, EXPLAIN and DESCRIBE commands.
 -   Speed up results display.
+-   Do not truncate results when SHOW, EXPLAIN or DESCRIBE command is executed.
 
 ## [0.12.0] - 2022-11-30
 
