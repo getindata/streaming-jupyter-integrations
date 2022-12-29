@@ -5,6 +5,7 @@
 ### Fixed
 
 -   Fix execution of SHOW, EXPLAIN and DESCRIBE commands.
+-   Speed up results display.
 
 ## [0.12.0] - 2022-11-30
 

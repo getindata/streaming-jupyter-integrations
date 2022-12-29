@@ -43,6 +43,7 @@ from .yarn import find_session_jm_address
 
 @magics_class
 class Integrations(Magics):
+
     def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
         self._secrets: Dict[str, str] = {}
@@ -55,6 +56,7 @@ class Integrations(Magics):
         self.wait_timeout_ms = 60 * 60 * 1000  # 1H
         # 20ms
         self.async_wait_s = 2e-2
+        self.display_results_batch_size = 25
         Integrations.__enable_sql_syntax_highlighting()
         self.deployment_bar = DeploymentBar(interrupt_callback=self.__interrupt_execute)
         # Indicates whether a job is executing on the Flink cluster in the background
@@ -405,7 +407,9 @@ class Integrations(Magics):
                 display_handle = None
                 for result in results:
                     # Explicit await for the same reason as in `__internal_execute_sql`
-                    await asyncio.sleep(self.async_wait_s)
+                    if rows_counter.value % self.display_results_batch_size == 0:
+                        # Sleeping for each row slows down showing the results significantly.
+                        await asyncio.sleep(self.async_wait_s)
                     res = list(result)
                     if display_row_kind:
                         res = [result.get_row_kind()] + res
