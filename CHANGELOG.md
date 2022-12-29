@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Try to load `flink-conf.yaml` from `FLINK_CONF_DIR` first.
+
 ### Fixed
 
 -   Fix execution of SHOW, EXPLAIN and DESCRIBE commands.
