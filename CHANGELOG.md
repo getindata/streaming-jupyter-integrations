@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.1] - 2023-01-05
+
 ### Added
 
 -   Try to load `flink-conf.yaml` from `FLINK_CONF_DIR` first.
@@ -166,7 +168,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.1...HEAD
+
+[0.12.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.0...0.12.1
 
 [0.12.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.11.0...0.12.0
 
