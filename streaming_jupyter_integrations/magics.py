@@ -7,7 +7,7 @@ import signal
 import subprocess
 import sys
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union, cast
 
 import nest_asyncio
 import pandas as pd
@@ -30,19 +30,21 @@ from pyflink.table import (EnvironmentSettings, ResultKind,
                            StreamTableEnvironment, Table, TableResult)
 
 from .cast_utils import cast_timestamp_ltz_to_string
-from .config_utils import load_config_file
+from .config_utils import load_config_file, read_flink_config_file
 from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import inline_sql_in_cell, is_dml, is_dql
+from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_metadata_query,
+                        is_query)
 from .variable_substitution import CellContentFormatter
 from .yarn import find_session_jm_address
 
 
 @magics_class
 class Integrations(Magics):
+
     def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
         self._secrets: Dict[str, str] = {}
@@ -55,6 +57,7 @@ class Integrations(Magics):
         self.wait_timeout_ms = 60 * 60 * 1000  # 1H
         # 20ms
         self.async_wait_s = 2e-2
+        self.display_results_batch_size = 25
         Integrations.__enable_sql_syntax_highlighting()
         self.deployment_bar = DeploymentBar(interrupt_callback=self.__interrupt_execute)
         # Indicates whether a job is executing on the Flink cluster in the background
@@ -129,7 +132,7 @@ class Integrations(Magics):
         }
 
     def _flink_connect_local(self, port: int) -> None:
-        global_conf = self.__read_global_config()
+        global_conf = read_flink_config_file()
         conf = self.__create_configuration_from_dict(global_conf)
         conf.set_integer("rest.port", port)
         conf.set_integer("parallelism.default", 1)
@@ -140,11 +143,13 @@ class Integrations(Magics):
         )
 
     def _flink_connect_remote(self, hostname: str, port: int) -> None:
+        global_conf = read_flink_config_file()
+        conf = self.__create_configuration_from_dict(global_conf)
         gateway = get_gateway()
         empty_string_array = gateway.new_array(gateway.jvm.String, 0)
         self.s_env = StreamExecutionEnvironment(
             gateway.jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createRemoteEnvironment(
-                hostname, port, empty_string_array
+                hostname, port, conf._j_configuration, empty_string_array
             )
         )
 
@@ -333,16 +338,24 @@ class Integrations(Magics):
         print("Job starting...")
         # Workaround - Python API does not work well with TIMESTAMP_LTZ type. If the output table contains the field,
         # cast it to string first.
-        if not is_dql(stmt):
-            execution_result = self.st_env.execute_sql(stmt)
-        else:
+        if is_query(stmt):
             execution_table = self.st_env.sql_query(stmt)
             execution_result = cast_timestamp_ltz_to_string(self.st_env, execution_table).execute()
+        else:
+            execution_result = self.st_env.execute_sql(stmt)
         print("Job started")
-        await self.__pull_results(execution_result, display_row_kind, is_dql(stmt))
+        # Pandas lib truncates view if the number of results exceeds the limit. The same applies to column width.
+        # If the query shows metadata, e.g. list of tables or list of columns, then no limit is applied.
+        pd_display_options = {
+            "display.max_rows": None if is_metadata_query(stmt) else 100,
+            "display.max_colwidth": None if is_metadata_query(stmt) else 100,
+        }
+        await self.__pull_results(execution_result, display_row_kind, is_dql(stmt), pd_display_options)
 
     async def __pull_results(self, execution_result: TableResult, display_row_kind: bool,
-                             display_results: bool) -> None:
+                             display_results: bool, pd_display_options: Optional[Dict[str, Any]] = None) -> None:
+        if not pd_display_options:
+            pd_display_options = {}
         # active polling
         while not self.interrupted:
             try:
@@ -353,7 +366,7 @@ class Integrations(Magics):
                     # if a select query has been executing then `wait` returns as soon as the first
                     # row is available. To display the results
                     print("Pulling query results...")
-                    await self.display_execution_result(execution_result, display_row_kind)
+                    await self.display_execution_result(execution_result, display_row_kind, pd_display_options)
                     return
                 else:
                     # if finished then return early even if the user interrupts after this
@@ -382,7 +395,8 @@ class Integrations(Magics):
         # usual happy path
         print("Execution successful")
 
-    async def display_execution_result(self, execution_result: TableResult, display_row_kind: bool) -> pd.DataFrame:
+    async def display_execution_result(self, execution_result: TableResult, display_row_kind: bool,
+                                       pd_display_options: Dict[str, Any]) -> pd.DataFrame:
         """
         Displays the execution result and returns a dataframe containing all the results.
         Display is done in a stream-like fashion displaying the results as they come.
@@ -391,6 +405,8 @@ class Integrations(Magics):
         columns = execution_result.get_table_schema().get_field_names()
         if display_row_kind:
             columns = ["row_kind"] + columns
+        for key, value in pd_display_options.items():
+            pd.set_option(key, value)
         df = pd.DataFrame(columns=columns)
         result_kind = execution_result.get_result_kind()
 
@@ -405,7 +421,9 @@ class Integrations(Magics):
                 display_handle = None
                 for result in results:
                     # Explicit await for the same reason as in `__internal_execute_sql`
-                    await asyncio.sleep(self.async_wait_s)
+                    if rows_counter.value % self.display_results_batch_size == 0:
+                        # Sleeping for each row slows down showing the results significantly.
+                        await asyncio.sleep(self.async_wait_s)
                     res = list(result)
                     if display_row_kind:
                         res = [result.get_row_kind()] + res
@@ -620,19 +638,6 @@ class Integrations(Magics):
     @staticmethod
     def __retract_user_as_something_is_executing_in_background() -> None:
         print("Please wait for the previously submitted task to finish or cancel it.")
-
-    @staticmethod
-    def __read_global_config() -> Dict[str, Any]:
-        if "FLINK_HOME" in os.environ:
-            with open(os.path.join(os.environ["FLINK_HOME"], "conf", "flink-conf.yaml"), 'r') as stream:
-                try:
-                    parsed_yaml = yaml.safe_load(stream)
-                    return parsed_yaml
-                except yaml.YAMLError as exc:
-                    print(exc)
-        else:
-            print("FLINK_HOME environment variable is not set, reading flink-conf skipped")
-        return {}
 
     @staticmethod
     def __create_configuration_from_dict(new_values: Dict[str, Any]) -> Configuration:

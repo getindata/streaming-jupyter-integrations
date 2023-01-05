@@ -17,12 +17,16 @@ QUERY_KEYWORDS = {
     'SELECT'
 }
 
-DQL_KEYWORDS = {
-    *QUERY_KEYWORDS,
+METADATA_KEYWORDS = {
     'DESCRIBE',
     'DESC',
     'EXPLAIN',
     'SHOW'
+}
+
+DQL_KEYWORDS = {
+    *QUERY_KEYWORDS,
+    *METADATA_KEYWORDS
 }
 
 DML_KEYWORDS = {
@@ -46,8 +50,16 @@ def is_dml(sql: str) -> bool:
     return __first_token_is_keyword(sql, DML_KEYWORDS)
 
 
+def is_query(sql: str) -> bool:
+    return __first_token_is_keyword(sql, QUERY_KEYWORDS)
+
+
 def is_dql(sql: str) -> bool:
     return __first_token_is_keyword(sql, DQL_KEYWORDS)
+
+
+def is_metadata_query(sql: str) -> bool:
+    return __first_token_is_keyword(sql, METADATA_KEYWORDS)
 
 
 def __first_token_is_keyword(sql: str, keywords: Iterable[str]) -> bool:
