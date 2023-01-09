@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Jar paths in `pipeline.jars` property are parsed and passed when creating remote execution environment.
+
 ## [0.12.1] - 2023-01-05
 
 ### Added
