@@ -164,10 +164,10 @@ class Integrations(Magics):
         # "pipeline.jars" have to contain the schema. Therefore, we need to remove the schema on our own.
         gateway = get_gateway()
         pipeline_jars = conf.get_string("pipeline.jars", "").split(";")
-        empty_string_array = gateway.new_array(gateway.jvm.String, len(pipeline_jars))
+        result = gateway.new_array(gateway.jvm.String, len(pipeline_jars))
         for i in range(len(pipeline_jars)):
-            empty_string_array[i] = pipeline_jars[i].replace("file://", "")
-        return empty_string_array
+            result[i] = pipeline_jars[i].replace("file://", "")
+        return result
 
     def _flink_connect_yarn_session(self, rm_hostname: str, rm_port: int, yarn_application_id: str) -> None:
         jm_hostname, jm_port = find_session_jm_address(rm_hostname, rm_port, yarn_application_id)
