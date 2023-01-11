@@ -21,6 +21,7 @@ from IPython.core.magic_arguments import (argument, magic_arguments,
 from ipytree import Node, Tree
 from ipywidgets import IntText
 from jupyter_core.paths import jupyter_config_dir
+from py4j.java_collections import JavaArray
 from py4j.protocol import Py4JJavaError
 from pyflink.common import Configuration
 from pyflink.common.types import Row
@@ -146,12 +147,27 @@ class Integrations(Magics):
         global_conf = read_flink_config_file()
         conf = self.__create_configuration_from_dict(global_conf)
         gateway = get_gateway()
-        empty_string_array = gateway.new_array(gateway.jvm.String, 0)
+        pipeline_jars_list = self._get_pipeline_jars(conf)
         self.s_env = StreamExecutionEnvironment(
             gateway.jvm.org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.createRemoteEnvironment(
-                hostname, port, conf._j_configuration, empty_string_array
+                hostname, port, conf._j_configuration, pipeline_jars_list
             )
         )
+
+    @staticmethod
+    def _get_pipeline_jars(conf: Configuration) -> JavaArray:
+        # When calling StreamExecutionEnvironment.createRemoteEnvironment() "pipeline.jars" property is overwritten
+        # with paths of jars specified as "String jarFiles" parameter. In consequence, we need to parse the property
+        # and pass the paths as "jarFiles" parameter.
+        # What is more, jarFiles are resolved incorrectly if the paths contain "file://" schema
+        # (org.apache.flink.api.java.RemoteEnvironmentConfigUtils#getJarFiles). On the other hand, jars specified in
+        # "pipeline.jars" have to contain the schema. Therefore, we need to remove the schema on our own.
+        gateway = get_gateway()
+        pipeline_jars = conf.get_string("pipeline.jars", "").split(";")
+        result = gateway.new_array(gateway.jvm.String, len(pipeline_jars))
+        for i in range(len(pipeline_jars)):
+            result[i] = pipeline_jars[i].replace("file://", "")
+        return result
 
     def _flink_connect_yarn_session(self, rm_hostname: str, rm_port: int, yarn_application_id: str) -> None:
         jm_hostname, jm_port = find_session_jm_address(rm_hostname, rm_port, yarn_application_id)
