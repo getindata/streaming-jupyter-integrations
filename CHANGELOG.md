@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+-  Apache Flink 1.16
+
+### Fixed
+-  fixed dependencies version in requirements.txt
+
 ## [0.12.1] - 2023-01-05
 
 ### Added
