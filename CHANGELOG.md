@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2023-01-17
+
+### Added
+
+-   Apache Flink 1.16
+
+### Fixed
+
+-   Jar paths in `pipeline.jars` property are parsed and passed when creating remote execution environment.
+-   fixed dependencies version in requirements.txt
+
 ## [0.12.1] - 2023-01-05
 
 ### Added
@@ -168,7 +179,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.1...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.0...HEAD
+
+[0.13.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.1...0.13.0
 
 [0.12.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.0...0.12.1
 
