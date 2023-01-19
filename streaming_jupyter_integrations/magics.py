@@ -163,7 +163,7 @@ class Integrations(Magics):
         # (org.apache.flink.api.java.RemoteEnvironmentConfigUtils#getJarFiles). On the other hand, jars specified in
         # "pipeline.jars" have to contain the schema. Therefore, we need to remove the schema on our own.
         gateway = get_gateway()
-        pipeline_jars = conf.get_string("pipeline.jars", "").split(";")
+        pipeline_jars = list(filter(lambda p: p, conf.get_string("pipeline.jars", "").split(";")))
         result = gateway.new_array(gateway.jvm.String, len(pipeline_jars))
         for i in range(len(pipeline_jars)):
             result[i] = pipeline_jars[i].replace("file://", "")
