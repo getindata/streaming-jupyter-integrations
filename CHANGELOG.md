@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed connecting to a remote cluster when `pipeline.jars` property is empty.
+
 ## [0.13.0] - 2023-01-17
 
 ### Added
