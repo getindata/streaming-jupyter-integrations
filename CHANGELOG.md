@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.1] - 2023-01-20
+
 ### Fixed
 
 -   Fixed connecting to a remote cluster when `pipeline.jars` property is empty.
@@ -183,7 +185,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.1...HEAD
+
+[0.13.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.0...0.13.1
 
 [0.13.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.12.1...0.13.0
 
