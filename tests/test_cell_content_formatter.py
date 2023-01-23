@@ -119,3 +119,14 @@ class TestCellContentFormatter:
             user_ns=TestCellContentFormatter.variables_in_kernel_context,
         ).substitute_user_variables()
         assert enriched_cell == "select * from table_name v where v.id = 'abc{1,3}'"
+
+    def test_skip_numerics_in_curly_brackets(self):
+        """It should skip brackets if something in brackets is numerical"""
+        cell_input_text = (
+            "select * from {{ some_table_name }} v where v.id = 'abc{1}'"
+        )
+        enriched_cell = CellContentFormatter(
+            input_string=cell_input_text,
+            user_ns=TestCellContentFormatter.variables_in_kernel_context,
+        ).substitute_user_variables()
+        assert enriched_cell == "select * from table_name v where v.id = 'abc{1}'"
