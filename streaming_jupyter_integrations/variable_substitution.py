@@ -83,12 +83,19 @@ class CellContentFormatter(string.Formatter):
 
     @staticmethod
     def _prepare_escaped_variables(input_text: str) -> str:
-        return (
+        escaped_string = (
             input_text.replace("{{", "{")
             .replace("}}", "}")
             .replace("{ ", "{")
             .replace(" }", "}")
         )
+
+        numeric_var_pattern = r"(\{[0-9]+\})"
+        numeric_list = set(re.findall(numeric_var_pattern, escaped_string))
+        for numeric in numeric_list:
+            escaped_string = escaped_string.replace(numeric, "{"+numeric+"}")
+
+        return escaped_string
 
     def _get_hidden_variables(self, escaped_string: str) -> str:
         hidden_var_pattern = r"(\$\{[_a-zA-Z][_a-zA-Z0-9]*\})"

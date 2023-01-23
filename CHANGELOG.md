@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Skip curly brackets with digits
+
 ## [0.13.1] - 2023-01-20
 
 ### Fixed
