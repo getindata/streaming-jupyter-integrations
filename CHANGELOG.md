@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.2] - 2023-01-23
+
 ### Fixed
 
 -   Skip curly brackets with digits
@@ -189,7 +191,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.1...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.2...HEAD
+
+[0.13.2]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.1...0.13.2
 
 [0.13.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.0...0.13.1
 
