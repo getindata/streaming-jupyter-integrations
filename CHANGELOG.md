@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.3] - 2023-02-08
+
 ### Fixed
 
 -   Fixed init order
@@ -195,7 +197,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.2...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.3...HEAD
+
+[0.13.3]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.2...0.13.3
 
 [0.13.2]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.1...0.13.2
 
