@@ -52,7 +52,6 @@ class Integrations(Magics):
         self._load_secrets_from_scli_config()
         self._set_java_options()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
-        self.__load_plugins()
         self.interrupted = False
         # Wait if necessary for at most the given time for the data to be ready.
         self.wait_timeout_ms = 60 * 60 * 1000  # 1H
@@ -119,8 +118,9 @@ class Integrations(Magics):
             raise ValueError(
                 f"Unknown execution mode. Expected 'local', 'remote' or 'yarn-session', actual '{execution_target}'.")
 
-        self.__flink_execute_sql_file("init.sql", display_row_kind=False)
         self._set_table_env(execution_mode)
+        self.__load_plugins()
+        self.__flink_execute_sql_file("init.sql", display_row_kind=False)
         self._initialize_ds_exec_variables()
         print(f"{execution_target} environment has been created.")
 

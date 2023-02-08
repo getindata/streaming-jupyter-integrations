@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed init order
+
 ## [0.13.2] - 2023-01-23
 
 ### Fixed
