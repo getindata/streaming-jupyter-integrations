@@ -385,7 +385,7 @@ class Integrations(Magics):
             # consume "job cancelled" error or rethrow any other
             if "org.apache.flink.runtime.client.JobCancellationException: Job was cancelled" not in str(err):
                 print("Exception while waiting for rows.", err)
-        except Exception as err:
+        except Exception as err:  # noqa: B902
             print("Exception while waiting for rows.", err)
 
     def get_job_status(self, execution_result: TableResult) -> Optional[JobStatus]:
@@ -477,7 +477,7 @@ class Integrations(Magics):
 
         if result_kind == ResultKind.SUCCESS_WITH_CONTENT:
             with execution_result.collect() as results:
-                row_queue = queue.SimpleQueue()
+                row_queue: queue.SimpleQueue[Optional[Row]] = queue.SimpleQueue()
 
                 # Waiting for the next result in iterator is a blocking action, so "Interrupt" button does not trigger
                 # any action until the next result comes. As a solution, there is a reader thread which puts results
@@ -492,7 +492,7 @@ class Integrations(Magics):
                         # consume "job cancelled" error or rethrow any other
                         if "org.apache.flink.runtime.client.JobCancellationException: Job was cancelled" not in str(e):
                             print("Exception while reading results.", e)
-                    except Exception as e:
+                    except Exception as e:  # noqa: B902
                         print("Exception while reading results.", e)
 
                 row_reader_thread = threading.Thread(target=row_reader)
