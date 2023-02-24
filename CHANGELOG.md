@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed query interruption.
 
 ## [0.13.3] - 2023-02-08
 
