@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.13.4] - 2023-02-24
+
+### Fixed
+
+-   Fixed query interruption.
+
 ## [0.13.3] - 2023-02-08
 
 ### Fixed
@@ -197,7 +203,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.3...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.4...HEAD
+
+[0.13.4]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.3...0.13.4
 
 [0.13.3]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.2...0.13.3
 
