@@ -26,7 +26,7 @@ from ipywidgets import IntText
 from jupyter_core.paths import jupyter_config_dir
 from py4j.java_collections import JavaArray
 from py4j.protocol import Py4JJavaError
-from pyflink.common import Configuration, JobStatus
+from pyflink.common import Configuration, JobClient, JobStatus
 from pyflink.common.types import Row
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway
@@ -388,10 +388,7 @@ class Integrations(Magics):
         except Exception as err:  # noqa: B902
             print("Exception while waiting for rows.", err)
 
-    def get_job_status(self, execution_result: TableResult) -> Optional[JobStatus]:
-        client = execution_result.get_job_client()
-        if client is None:  # Job is not initialized yet
-            return None
+    def get_job_status(self, client: JobClient) -> JobStatus:
         try:
             return client.get_job_status().result()
         except Py4JJavaError as err:
@@ -403,6 +400,13 @@ class Integrations(Magics):
 
     async def __pull_results(self, execution_result: TableResult, display_row_kind: bool,
                              display_results: bool, pd_display_options: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Pulls requests from given TableResult.
+        :param execution_result: TableResult containing query results.
+        :param display_row_kind: Indicates whether row kind should be displayed (insert/update_before/update_after)
+        :param display_results: Indicates whether the query returns any results (e.g. query results or metadata).
+        :param pd_display_options: Pandas display options.
+        """
         if not pd_display_options:
             pd_display_options = {}
 
@@ -418,19 +422,22 @@ class Integrations(Magics):
                 # Wait until the first row is available or the job is finished/cancelled. Without the second condition,
                 # the loop will never end if the job return empty result.
                 if display_results:
-                    job_status = self.get_job_status(execution_result)
-                    if job_status is None:  # Job is not initialized yet
-                        continue
-                    if job_status in [JobStatus.CREATED, JobStatus.RUNNING]:
-                        if await_first_row_thread.is_alive():
+                    client = execution_result.get_job_client()
+                    # If client is None, then the result is returned immediately (e.g. metadata query).
+                    if client is not None:
+                        job_status = self.get_job_status(client)
+                        if job_status is None:  # Job is not initialized yet
                             continue
-                    else:  # job is finished/cancelled/failed
-                        time.sleep(2)
-                        # If job is done but the thread is still waiting for the first row, it means that the job has
-                        # no results at all.
-                        if await_first_row_thread.is_alive():
-                            print("No results returned")
-                            break
+                        if job_status in [JobStatus.CREATED, JobStatus.RUNNING]:
+                            if await_first_row_thread.is_alive():
+                                continue
+                        else:  # job is finished/cancelled/failed
+                            time.sleep(2)
+                            # If job is done but the thread is still waiting for the first row, it means that the job
+                            # has no results at all.
+                            if await_first_row_thread.is_alive():
+                                print("No results returned")
+                                break
                     print("Pulling query results...")
                     await self.display_execution_result(execution_result, display_row_kind, pd_display_options)
                     return

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed displaying results of metadata queries.
+
 ## [0.13.4] - 2023-02-24
 
 ### Fixed
