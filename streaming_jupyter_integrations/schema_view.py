@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from IPython.display import JSON
-from ipytree import Tree, Node
+from ipytree import Node, Tree
 from pyflink.common import Row
 from pyflink.table import StreamTableEnvironment
 
