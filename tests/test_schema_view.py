@@ -2,9 +2,12 @@ import unittest
 
 from IPython.display import JSON
 
-from streaming_jupyter_integrations.schema_view import (JsonTreeSchemaBuilder, SchemaRoot, SchemaCatalog,
-                                                        SchemaDatabase, \
-                                                        SchemaTable, SchemaColumn)
+from streaming_jupyter_integrations.schema_view import (JsonTreeSchemaBuilder,
+                                                        SchemaCatalog,
+                                                        SchemaColumn,
+                                                        SchemaDatabase,
+                                                        SchemaRoot,
+                                                        SchemaTable)
 
 
 class TestJsonTreeSchemaBuilder(unittest.TestCase):
