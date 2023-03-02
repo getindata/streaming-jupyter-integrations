@@ -104,7 +104,6 @@ class SchemaLoader:
 
 class JsonTreeSchemaBuilder:
     def build(self, root: SchemaRoot) -> JSON:
-        print({catalog.name: self._build_catalog_value(catalog) for catalog in root.catalogs})
         return JSON({catalog.name: self._build_catalog_value(catalog) for catalog in root.catalogs})
 
     def _build_catalog_value(self, catalog: SchemaCatalog) -> Dict[str, Any]:
