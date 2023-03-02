@@ -6,6 +6,10 @@
 
 -   Fixed displaying results of metadata queries.
 
+### Added
+
+-   Add `type` parameter for `%flink_show_table_tree`, either `tree` (default) or `json`.
+
 ## [0.13.4] - 2023-02-24
 
 ### Fixed
