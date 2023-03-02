@@ -21,7 +21,6 @@ from IPython.core.display import display as core_display
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import (argument, magic_arguments,
                                           parse_argstring)
-from ipytree import Node, Tree
 from ipywidgets import IntText
 from jupyter_core.paths import jupyter_config_dir
 from py4j.java_collections import JavaArray
@@ -39,6 +38,8 @@ from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
+from .schema_view import (IPyTreeSchemaBuilder, JsonTreeSchemaBuilder,
+                          SchemaLoader)
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
 from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_metadata_query,
                         is_query)
@@ -752,71 +753,18 @@ class Integrations(Magics):
         return configuration
 
     @line_magic
-    def flink_show_table_tree(self, line: str) -> Tree:
-        return self._build_schema_tree()
+    @magic_arguments()
+    @argument("-t", "--type", type=str, default="tree", help="The widget type used to display schemas.")
+    def flink_show_table_tree(self, line: str) -> Any:
+        args = parse_argstring(self.flink_show_table_tree, line)
+        widget_type = args.type
 
-    def _build_schema_tree(self) -> Tree:
-        # Save name of the current catalog and database. In order to build tables hierarchy, we need to change
-        # current catalog and database. Once the table tree is built, the current catalog and database are set to
-        # the initial ones.
-        current_catalog_name = self.st_env.execute_sql("SHOW CURRENT CATALOG").collect().next()[0]
-        current_database_name = self.st_env.execute_sql("SHOW CURRENT DATABASE").collect().next()[0]
-
-        tree = Tree()
-        catalogs = self.st_env.execute_sql("SHOW CATALOGS").collect()
-        for catalog in catalogs:
-            tree.add_node(self._build_catalog_node(catalog))
-
-        self.st_env.execute_sql(f"USE CATALOG `{current_catalog_name}`")
-        self.st_env.execute_sql(f"USE `{current_database_name}`")
-
-        return tree
-
-    def _build_catalog_node(self, catalog: Row) -> Node:
-        catalog_name = catalog[0]
-        self.st_env.execute_sql(f"USE CATALOG `{catalog_name}`")
-        databases = self.st_env.execute_sql("SHOW DATABASES").collect()
-        tree_databases = [self._build_database_node(catalog_name, database) for database in databases]
-        return Node(catalog_name, tree_databases, opened=False, icon="folder")
-
-    def _build_database_node(self, catalog_name: str, database: Row) -> Node:
-        database_name = database[0]
-        self.st_env.execute_sql(f"USE `{database_name}`")
-        tables = [table[0] for table in self.st_env.execute_sql("SHOW TABLES").collect()]
-        views = [view[0] for view in self.st_env.execute_sql("SHOW VIEWS").collect()]
-        tree_tables = [self._build_table_node(catalog_name, database_name, table,
-                                              "eye" if table in views else "table") for table in tables]
-        functions_node = self._build_functions_node()
-        tree_tables.append(functions_node)
-        return Node(database_name, tree_tables, opened=False, icon="database")
-
-    def _build_functions_node(self) -> Node:
-        functions = self.st_env.execute_sql("SHOW USER FUNCTIONS").collect()
-        tree_functions = [Node(function[0], opened=False, icon="terminal") for function in functions]
-        return Node("Functions", tree_functions, opened=False, icon="list")
-
-    def _build_table_node(self, catalog_name: str, database_name: str, table_name: str, icon: str) -> Node:
-        columns = self.st_env.execute_sql(f"DESCRIBE `{catalog_name}`.`{database_name}`.`{table_name}`").collect()
-        tree_columns = [self._build_column_node(column) for column in columns]
-        return Node(table_name, tree_columns, opened=False, icon=icon)
-
-    def _build_column_node(self, column: Row) -> Node:
-        column_name = column[0]
-        column_type = column[1]
-        column_null = column[2]
-        column_key = column[3]
-        column_extras = column[4]
-        column_watermark = column[5]
-
-        column_display = f"{column_name}: {column_type}"
-        column_display += " NULLABLE" if column_null else " NOT NULL"
-        if column_extras:
-            column_display += f" {column_extras}"
-        if column_watermark:
-            column_display += f" {column_watermark}"
-
-        column_icon = "key" if column_key else "columns"
-        return Node(column_display, opened=False, icon=column_icon)
+        schema = SchemaLoader(self.st_env).get_schema()
+        if widget_type == "tree":
+            return IPyTreeSchemaBuilder().build(schema)
+        elif widget_type == "json":
+            return JsonTreeSchemaBuilder().build(schema)
+        raise ValueError(f"Unknown widget type '{widget_type}'.")
 
 
 def load_ipython_extension(ipython: Any) -> None:
