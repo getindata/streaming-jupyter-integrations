@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+-   Upgrade to Flink 1.16.
+
 ### Fixed
 
 -   Fixed displaying results of metadata queries.

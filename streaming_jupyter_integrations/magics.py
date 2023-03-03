@@ -32,7 +32,6 @@ from pyflink.java_gateway import get_gateway
 from pyflink.table import (EnvironmentSettings, ResultKind,
                            StreamTableEnvironment, Table, TableResult)
 
-from .cast_utils import cast_timestamp_ltz_to_string
 from .config_utils import load_config_file, read_flink_config_file
 from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
@@ -41,8 +40,7 @@ from .reflection import get_method_names_for
 from .schema_view import (IPyTreeSchemaBuilder, JsonTreeSchemaBuilder,
                           SchemaLoader)
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_metadata_query,
-                        is_query)
+from .sql_utils import inline_sql_in_cell, is_dml, is_dql, is_metadata_query
 from .variable_substitution import CellContentFormatter
 from .yarn import find_session_jm_address
 
@@ -354,13 +352,7 @@ class Integrations(Magics):
     # a workaround for https://issues.apache.org/jira/browse/FLINK-23020
     async def __internal_execute_sql(self, stmt: str, display_row_kind: bool) -> None:
         print("Job starting...")
-        # Workaround - Python API does not work well with TIMESTAMP_LTZ type. If the output table contains the field,
-        # cast it to string first.
-        if is_query(stmt):
-            execution_table = self.st_env.sql_query(stmt)
-            execution_result = cast_timestamp_ltz_to_string(self.st_env, execution_table).execute()
-        else:
-            execution_result = self.st_env.execute_sql(stmt)
+        execution_result = self.st_env.execute_sql(stmt)
         print("Job started")
         # Pandas lib truncates view if the number of results exceeds the limit. The same applies to column width.
         # If the query shows metadata, e.g. list of tables or list of columns, then no limit is applied.
