@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 
 from py4j.protocol import Py4JJavaError
+from pyflink.common import Row
 from pyflink.table import ResultKind, TableResult
 from pyflink.table.table_result import CloseableIterator
 
@@ -25,7 +26,7 @@ class ResultStatus(Enum):
 class ExecutionResultFetcher:
     def __init__(self,
                  execution_result: TableResult,
-                 row_queue: queue.SimpleQueue):
+                 row_queue: queue.SimpleQueue[Optional[Row]]):
         self.execution_result = execution_result
         self.row_queue = row_queue
 

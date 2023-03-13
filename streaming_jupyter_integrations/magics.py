@@ -31,7 +31,7 @@ from .cast_utils import cast_timestamp_ltz_to_string
 from .config_utils import load_config_file, read_flink_config_file
 from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
-from .execution_result_fetcher import ExecutionResultFetcher, ResultStatus
+from .execution_result_fetcher import ExecutionResultFetcher
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .schema_view import (IPyTreeSchemaBuilder, JsonTreeSchemaBuilder,
@@ -368,7 +368,7 @@ class Integrations(Magics):
             fetcher.wait()
             print("Execution successful")
             return
-        else: # display results
+        else:  # display results
             print("Pulling query results...")
             await self.display_execution_result(execution_result, row_queue, display_row_kind, pd_display_options)
 
