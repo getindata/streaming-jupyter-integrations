@@ -20,7 +20,7 @@ from IPython.core.magic_arguments import (argument, magic_arguments,
 from ipywidgets import IntText
 from jupyter_core.paths import jupyter_config_dir
 from py4j.java_collections import JavaArray
-from pyflink.common import Configuration, JobStatus
+from pyflink.common import Configuration
 from pyflink.common.types import Row
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway

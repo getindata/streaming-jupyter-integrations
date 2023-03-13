@@ -119,6 +119,7 @@ class ExecutionResultFetcher:
         while not self.interrupted:
             try:
                 execution_result.wait(self.first_row_polling_ms)
+                break
             except Py4JJavaError as err:
                 # consume timeout error
                 if "java.util.concurrent.TimeoutException" in str(err):
