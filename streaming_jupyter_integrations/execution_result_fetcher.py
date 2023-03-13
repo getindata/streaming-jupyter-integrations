@@ -41,7 +41,7 @@ class ExecutionResultFetcher:
     def __init__(self,
                  execution_result: TableResult,
                  row_queue: queue.SimpleQueue[Optional[Row]],
-                 first_row_polling_ms: int):
+                 first_row_polling_ms: int = 60 * 60 * 1000):
         self.execution_result = execution_result
         self.row_queue = row_queue
         self.first_row_polling_ms = first_row_polling_ms

@@ -53,7 +53,6 @@ class Integrations(Magics):
         self._set_java_options()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.interrupted = False
-        self.first_row_polling_ms = 60 * 60 * 1000  # 1h
         # 20ms
         self.async_wait_s = 2e-2
         Integrations.__enable_sql_syntax_highlighting()
@@ -361,7 +360,7 @@ class Integrations(Magics):
         self.interrupted = False
 
         row_queue: queue.SimpleQueue[Optional[Row]] = queue.SimpleQueue()
-        fetcher = ExecutionResultFetcher(execution_result, row_queue, self.first_row_polling_ms)
+        fetcher = ExecutionResultFetcher(execution_result, row_queue)
         fetcher.start()
 
         if not display_results:
