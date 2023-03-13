@@ -377,9 +377,6 @@ class Integrations(Magics):
             status = fetcher.result_status()
             if status == ResultStatus.NOT_AVAILABLE:
                 continue
-            elif status == ResultStatus.EMPTY:
-                print("No results.")
-                break
             elif status == ResultStatus.AVAILABLE:
                 print("Pulling query results...")
                 await self.display_execution_result(execution_result, row_queue, display_row_kind, pd_display_options)
