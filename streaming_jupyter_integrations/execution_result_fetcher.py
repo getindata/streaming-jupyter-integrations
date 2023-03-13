@@ -2,10 +2,12 @@ import queue
 import threading
 import time
 from enum import Enum
+from typing import Optional
 
 from py4j.protocol import Py4JJavaError
-from pyflink.common import JobClient, JobStatus
-from pyflink.table import TableResult, ResultKind
+from pyflink.common import JobClient, JobStatus, Row
+from pyflink.table import ResultKind, TableResult
+from pyflink.table.table_result import CloseableIterator
 
 
 class FetcherState(Enum):
@@ -38,18 +40,17 @@ class ResultStatus(Enum):
 class ExecutionResultFetcher:
     def __init__(self,
                  execution_result: TableResult,
-                 row_queue: queue.SimpleQueue,
+                 row_queue: queue.SimpleQueue[Optional[Row]],
                  first_row_polling_ms: int):
         self.execution_result = execution_result
         self.row_queue = row_queue
         self.first_row_polling_ms = first_row_polling_ms
 
-        self.background_task = None
+        self.background_task = threading.Thread(target=self._background_task, args=(self.execution_result,))
         self.interrupted = False
         self.current_state = FetcherState.UNKNOWN
 
     def start(self) -> None:
-        self.background_task = threading.Thread(target=self._background_task, args=(self.execution_result,))
         self.current_state = FetcherState.STARTED
         self.background_task.start()
 
@@ -111,7 +112,7 @@ class ExecutionResultFetcher:
             self.current_state = FetcherState.FAILED
             raise err
 
-    def _wait_for_the_first_result(self, execution_result) -> None:
+    def _wait_for_the_first_result(self, execution_result: TableResult) -> None:
         try:
             execution_result.wait(self.first_row_polling_ms)
         except Py4JJavaError as err:
@@ -123,7 +124,7 @@ class ExecutionResultFetcher:
             print("Exception while waiting for rows.", err)
             raise err
 
-    def _fetch_results(self, execution_result) -> None:
+    def _fetch_results(self, execution_result: TableResult) -> None:
         result_kind = execution_result.get_result_kind()
         if result_kind == ResultKind.SUCCESS_WITH_CONTENT:
             with execution_result.collect() as results:
@@ -138,7 +139,7 @@ class ExecutionResultFetcher:
                     print("Exception while reading results.", e)
                     raise e
 
-    def _consume_results_iterator(self, results) -> None:
+    def _consume_results_iterator(self, results: CloseableIterator) -> None:
         for result in results:
             if self.interrupted:
                 return
