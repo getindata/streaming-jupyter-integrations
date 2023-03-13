@@ -11,7 +11,7 @@ from pyflink.table.table_result import CloseableIterator
 
 
 class FetcherState(Enum):
-    UNKNOWN = 0
+    INITIALIZED = 0
     STARTED = 1
     WAITING_FOR_FIRST_RESULT = 2
     FETCHING_RESULTS = 3
@@ -48,18 +48,19 @@ class ExecutionResultFetcher:
 
         self.background_task = threading.Thread(target=self._background_task, args=(self.execution_result,))
         self.interrupted = False
-        self.current_state = FetcherState.UNKNOWN
+        self.current_state = FetcherState.INITIALIZED
 
     def start(self) -> None:
+        if self.current_state != FetcherState.INITIALIZED:
+            raise ValueError("The fetcher cannot be started twice.")
         self.current_state = FetcherState.STARTED
         self.background_task.start()
 
     def interrupt(self) -> None:
         self.interrupted = True
 
-    def wait(self) -> None:
-        if self.background_task is not None:
-            self.background_task.join()
+    def wait(self, timeout: int = None) -> None:
+        self.background_task.join(timeout)
 
     def state(self) -> FetcherState:
         return self.current_state
