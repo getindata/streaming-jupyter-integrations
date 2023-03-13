@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.5] - 2023-03-13
+
 ### Fixed
 
 -   Fixed displaying results of metadata queries.
@@ -211,7 +213,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.4...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.5...HEAD
+
+[0.13.5]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.4...0.13.5
 
 [0.13.4]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.3...0.13.4
 
