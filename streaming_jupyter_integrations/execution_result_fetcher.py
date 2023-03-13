@@ -103,7 +103,9 @@ class ExecutionResultFetcher:
         try:
             self.current_state = FetcherState.WAITING_FOR_FIRST_RESULT
             self._wait_for_the_first_result(execution_result)
+
             if self.interrupted:
+                self.current_state = FetcherState.CANCELLED
                 return
 
             self.current_state = FetcherState.FETCHING_RESULTS
@@ -143,6 +145,7 @@ class ExecutionResultFetcher:
     def _consume_results_iterator(self, results: CloseableIterator) -> None:
         for result in results:
             if self.interrupted:
+                self.current_state = FetcherState.CANCELLED
                 return
             self.row_queue.put(result)
         # None is a "poison pill"
