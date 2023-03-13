@@ -59,7 +59,7 @@ class ExecutionResultFetcher:
     def interrupt(self) -> None:
         self.interrupted = True
 
-    def wait(self, timeout: int = None) -> None:
+    def wait(self, timeout: Optional[int] = None) -> None:
         self.background_task.join(timeout)
 
     def state(self) -> FetcherState:
@@ -116,16 +116,22 @@ class ExecutionResultFetcher:
             raise err
 
     def _wait_for_the_first_result(self, execution_result: TableResult) -> None:
-        try:
-            execution_result.wait(self.first_row_polling_ms)
-        except Py4JJavaError as err:
-            # consume "job cancelled" error or rethrow any other
-            if "org.apache.flink.runtime.client.JobCancellationException: Job was cancelled" not in str(err):
+        while not self.interrupted:
+            try:
+                execution_result.wait(self.first_row_polling_ms)
+            except Py4JJavaError as err:
+                # consume timeout error
+                if "java.util.concurrent.TimeoutException" in str(err):
+                    continue
+                # consume "job cancelled" error
+                if "org.apache.flink.runtime.client.JobCancellationException: Job was cancelled" in str(err):
+                    continue
+                # rethrow any other error
                 print("Exception while waiting for rows.", err)
                 raise err
-        except Exception as err:  # noqa: B902
-            print("Exception while waiting for rows.", err)
-            raise err
+            except Exception as err:  # noqa: B902
+                print("Exception while waiting for rows.", err)
+                raise err
 
     def _fetch_results(self, execution_result: TableResult) -> None:
         result_kind = execution_result.get_result_kind()
