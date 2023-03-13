@@ -349,7 +349,7 @@ class Integrations(Magics):
     async def __pull_results(self, execution_result: TableResult, display_row_kind: bool,
                              display_results: bool, pd_display_options: Optional[Dict[str, Any]] = None) -> None:
         """
-        Pulls requests from given TableResult.
+        Pulls results from given TableResult.
         :param execution_result: TableResult containing query results.
         :param display_row_kind: Indicates whether row kind should be displayed (insert/update_before/update_after)
         :param display_results: Indicates whether the query returns any results (e.g. query results or metadata).
@@ -364,33 +364,32 @@ class Integrations(Magics):
         fetcher = ExecutionResultFetcher(execution_result, row_queue, self.first_row_polling_ms)
         fetcher.start()
 
+        if not display_results:
+            # The action should finish immediately so that we can block on it.
+            fetcher.wait()
+            print("Execution successful")
+            return
+
         while not self.interrupted:
             # Explicit await is needed to unblock the main thread to pick up other tasks.
             # In Jupyter's main execution pool there is only one worker thread.
             await asyncio.sleep(self.async_wait_s)
+            # Wait until result are available
+            status = fetcher.result_status()
+            if status == ResultStatus.NOT_AVAILABLE:
+                continue
+            elif status == ResultStatus.EMPTY:
+                print("No results.")
+                break
+            elif status == ResultStatus.AVAILABLE:
+                print("Pulling query results...")
+                await self.display_execution_result(execution_result, row_queue, display_row_kind, pd_display_options)
+                break
 
-            if not display_results:
-                # The action should finish immediately so that we can block on it.
-                fetcher.wait()
-                print("Execution successful")
-                return
-            else:  # display results
-                # Wait until result are available
-                status = fetcher.result_status()
-                if status == ResultStatus.NOT_AVAILABLE:
-                    continue
-                elif status in [ResultStatus.EMPTY]:
-                    print("No results.")
-                    break
-                elif status in [ResultStatus.AVAILABLE]:
-                    print("Pulling query results...")
-                    await self.display_execution_result(execution_result, row_queue, display_row_kind,
-                                                        pd_display_options)
-                    break
-
+        # Kill the Flink job if query has been interrupted.
         if self.interrupted:
             job_client = execution_result.get_job_client()
-            if job_client is not None and job_client.get_job_status() not in [JobStatus.CANCELLING, JobStatus.CANCELED]:
+            if job_client is not None:
                 print(f"Job cancelled {job_client.get_job_id()}")
                 job_client.cancel().result()
             else:
@@ -428,7 +427,7 @@ class Integrations(Magics):
                 # Explicit await for the same reason as in `__internal_execute_sql`
                 await asyncio.sleep(self.async_wait_s)
                 try:
-                    result = row_queue.get(timeout=1.0)
+                    result = row_queue.get(timeout=0.1)
                     if result is None:  # None indicates that there will be no more results
                         break
                 except queue.Empty:
@@ -444,7 +443,7 @@ class Integrations(Magics):
                     display_handle = display.display(df, display_id=True)
                 else:
                     display_handle.update(df)
-        else:
+        else:  # result_kind == ResultKind.SUCCESS
             series = pd.Series(
                 [pyflink_result_kind_to_string(result_kind)], index=df.columns
             )
