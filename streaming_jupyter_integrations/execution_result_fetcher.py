@@ -49,12 +49,6 @@ class ExecutionResultFetcher:
         return self.current_state
 
     def result_status(self) -> ResultStatus:
-        client = self.execution_result.get_job_client()
-        # If client is None, then the result is returned immediately (e.g. metadata query).
-        if client is None:
-            return ResultStatus.AVAILABLE
-
-        # The query does not return result immediately.
         if self.state() in [FetcherState.INITIALIZED, FetcherState.STARTED]:
             return ResultStatus.NOT_AVAILABLE
         elif self.state() in [FetcherState.FETCHING_RESULTS, FetcherState.FINISHED]:
@@ -87,9 +81,9 @@ class ExecutionResultFetcher:
 
     def _consume_results_iterator(self, results: CloseableIterator) -> None:
         for result in results:
+            self.row_queue.put(result)
             if self.interrupted:
                 self.current_state = FetcherState.CANCELLED
                 return
-            self.row_queue.put(result)
         # None is a "poison pill"
         self.row_queue.put(None)

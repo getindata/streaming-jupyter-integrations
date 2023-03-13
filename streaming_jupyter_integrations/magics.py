@@ -368,19 +368,9 @@ class Integrations(Magics):
             fetcher.wait()
             print("Execution successful")
             return
-
-        while not self.interrupted:
-            # Explicit await is needed to unblock the main thread to pick up other tasks.
-            # In Jupyter's main execution pool there is only one worker thread.
-            await asyncio.sleep(self.async_wait_s)
-            # Wait until result are available
-            status = fetcher.result_status()
-            if status == ResultStatus.NOT_AVAILABLE:
-                continue
-            elif status == ResultStatus.AVAILABLE:
-                print("Pulling query results...")
-                await self.display_execution_result(execution_result, row_queue, display_row_kind, pd_display_options)
-                break
+        else: # display results
+            print("Pulling query results...")
+            await self.display_execution_result(execution_result, row_queue, display_row_kind, pd_display_options)
 
         # Kill the Flink job if query has been interrupted.
         if self.interrupted:
