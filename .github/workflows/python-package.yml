@@ -31,6 +31,7 @@ jobs:
 
       - name: Test pre-commit hooks
         run: |
+          pip install jupyter-packaging>=0.12.2
           python setup.py install
           pip freeze
           pipdeptree
