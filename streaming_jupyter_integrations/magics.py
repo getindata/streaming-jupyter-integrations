@@ -50,6 +50,7 @@ from .yarn import find_session_jm_address
 @magics_class
 class Integrations(Magics):
 
+    """Test change"""
     def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
         self._secrets: Dict[str, str] = {}
