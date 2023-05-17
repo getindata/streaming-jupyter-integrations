@@ -31,7 +31,7 @@ jobs:
 
       - name: Test pre-commit hooks
         run: |
-          pip install .[tests]
+          python setup.py install
           pip freeze
           pipdeptree
           pre-commit run --all-files
