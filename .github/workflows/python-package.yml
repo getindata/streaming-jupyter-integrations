@@ -27,14 +27,12 @@ jobs:
           python -m pip install virtualenv pipdeptree
           virtualenv venv
           source venv/bin/activate
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
 
       - name: Test pre-commit hooks
         run: |
-          pip install jupyter-packaging>=0.12.2 pre-commit==2.15.0 tox==3.21.1
-          pip install -r requirements.txt
-          python setup.py install
-          pip freeze
+          python -m pip install .
+          python -m pip freeze
           pipdeptree
           pre-commit run --all-files
 
