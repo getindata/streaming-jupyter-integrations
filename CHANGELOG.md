@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.0] - 2023-05-19
+
 ### Added
 
 -   Add `%flink_execute_sql_set` command which allows to run multiple inserts in statement set
@@ -217,7 +219,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.5...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.0...HEAD
+
+[0.14.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.5...0.14.0
 
 [0.13.5]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.4...0.13.5
 
