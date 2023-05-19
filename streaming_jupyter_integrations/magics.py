@@ -4,13 +4,9 @@ import asyncio
 import os
 import pathlib
 import queue
-import signal
 import subprocess
 import sys
-import threading
-import time
-from functools import wraps
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, Optional, Union, cast
 
 import nest_asyncio
 import pandas as pd
@@ -24,8 +20,7 @@ from IPython.core.magic_arguments import (argument, magic_arguments,
 from ipywidgets import IntText
 from jupyter_core.paths import jupyter_config_dir
 from py4j.java_collections import JavaArray
-from py4j.protocol import Py4JJavaError
-from pyflink.common import Configuration, JobClient, JobStatus
+from pyflink.common import Configuration
 from pyflink.common.types import Row
 from pyflink.datastream import DataStream, StreamExecutionEnvironment
 from pyflink.java_gateway import get_gateway
@@ -36,6 +31,7 @@ from .cast_utils import cast_timestamp_ltz_to_string
 from .config_utils import load_config_file, read_flink_config_file
 from .deployment_bar import DeploymentBar
 from .display import pyflink_result_kind_to_string
+from .execution_result_fetcher import ExecutionResultFetcher
 from .jar_handler import JarHandler
 from .reflection import get_method_names_for
 from .schema_view import (IPyTreeSchemaBuilder, JsonTreeSchemaBuilder,
@@ -57,7 +53,6 @@ class Integrations(Magics):
         self._set_java_options()
         self.jar_handler = JarHandler(project_root_dir=os.getcwd())
         self.interrupted = False
-        self.first_row_polling_ms = 60 * 60 * 1000  # 1h
         # 20ms
         self.async_wait_s = 2e-2
         Integrations.__enable_sql_syntax_highlighting()
@@ -236,23 +231,6 @@ class Integrations(Magics):
         for var_name, filepath in secrets_list.items():
             self._load_secret_from_file(var_name, filepath)
 
-    def __interrupt_signal_decorator(method: Callable[..., Any]) -> Callable[..., Any]:
-        @wraps(method)
-        def _impl(self: 'Integrations', *method_args: Tuple[Any], **method_kwargs: Dict[Any, Any]) -> None:
-            self.interrupted = False
-            # override SIGINT handlers so that they are not propagated
-            # to flink java processes. A copy of the original handler is saved
-            # so that we can restore it later on.
-            # Side note: boolean assignment is atomic in python.
-            original_sigint = signal.getsignal(signal.SIGINT)
-            signal.signal(signal.SIGINT, self.__interrupt_execute)
-            try:
-                method(self, *method_args, **method_kwargs)
-            finally:
-                signal.signal(signal.SIGINT, original_sigint)
-
-        return _impl
-
     @line_magic
     @magic_arguments()
     @argument(
@@ -267,7 +245,6 @@ class Integrations(Magics):
         else:
             print("File {} not found".format(path))
 
-    @__interrupt_signal_decorator
     def __flink_execute_sql_file_internal(self, statements: Iterable[str], display_row_kind: bool) -> None:
         for stmt in statements:
             if self.interrupted:
@@ -288,7 +265,6 @@ class Integrations(Magics):
             return
         self.___flink_execute_internal(cell, args.display_row_kind)
 
-    @__interrupt_signal_decorator
     def ___flink_execute_internal(self, stmt: str, display_row_kind: bool) -> None:
         task = self.__flink_execute_internal(stmt, display_row_kind)
         print("This job runs in a background, please either wait or interrupt its execution before continuing")
@@ -368,7 +344,6 @@ class Integrations(Magics):
         stmt = self.__enrich_cell(cell)
         self.__flink_execute_sql_internal(stmt, args.display_row_kind)
 
-    @__interrupt_signal_decorator
     def __flink_execute_sql_internal(self, stmt: str, display_row_kind: bool) -> None:
         task = self.__internal_execute_sql(stmt, display_row_kind)
         if is_dml(stmt) or is_dql(stmt):
@@ -403,39 +378,10 @@ class Integrations(Magics):
         }
         await self.__pull_results(execution_result, display_row_kind, is_dql(stmt), pd_display_options)
 
-    # Warning: ugly huck for a probable bug in Flink.
-    # (1) If execution_result.wait() timeout is too low, even if it is executed in a loop until no timeout is thrown,
-    # Flink may drop some results. If the timeout is high and there is no periodical polling for the first row,
-    # it seems that no results are dropped.
-    # (2) If an asyncio task is blocked for a long time, it prevents execution of other actions, e.g. action triggered
-    # by "Interrupt" button. This is why asyncio tasks should call "asyncio.sleep" periodically.
-    # Having (1) and (2) in mind, we have to delegate blocking action into a separate thread and check its status
-    # periodically in a non-blocking way.
-    # This thread will exit automatically once job is cancelled.
-    def await_first_row(self, execution_result: TableResult) -> None:
-        try:
-            execution_result.wait(self.first_row_polling_ms)
-        except Py4JJavaError as err:
-            # consume "job cancelled" error or rethrow any other
-            if "org.apache.flink.runtime.client.JobCancellationException: Job was cancelled" not in str(err):
-                print("Exception while waiting for rows.", err)
-        except Exception as err:  # noqa: B902
-            print("Exception while waiting for rows.", err)
-
-    def get_job_status(self, client: JobClient) -> JobStatus:
-        try:
-            return client.get_job_status().result()
-        except Py4JJavaError as err:
-            # hack for "local" mode
-            if "MiniCluster is not yet running or has already been shut down" in str(err):
-                return JobStatus.FINISHED
-            else:
-                raise err
-
     async def __pull_results(self, execution_result: TableResult, display_row_kind: bool,
                              display_results: bool, pd_display_options: Optional[Dict[str, Any]] = None) -> None:
         """
-        Pulls requests from given TableResult.
+        Pulls results from given TableResult.
         :param execution_result: TableResult containing query results.
         :param display_row_kind: Indicates whether row kind should be displayed (insert/update_before/update_after)
         :param display_results: Indicates whether the query returns any results (e.g. query results or metadata).
@@ -444,50 +390,23 @@ class Integrations(Magics):
         if not pd_display_options:
             pd_display_options = {}
 
-        await_first_row_thread = threading.Thread(target=self.await_first_row, args=(execution_result,))
-        await_first_row_thread.start()
+        self.interrupted = False
 
-        # active polling
-        while not self.interrupted:
-            try:
-                # Explicit await is needed to unblock the main thread to pick up other tasks.
-                # In Jupyter's main execution pool there is only one worker thread.
-                await asyncio.sleep(self.async_wait_s)
-                # Wait until the first row is available or the job is finished/cancelled. Without the second condition,
-                # the loop will never end if the job return empty result.
-                if display_results:
-                    client = execution_result.get_job_client()
-                    # If client is None, then the result is returned immediately (e.g. metadata query).
-                    if client is not None:
-                        job_status = self.get_job_status(client)
-                        if job_status is None:  # Job is not initialized yet
-                            continue
-                        if job_status in [JobStatus.CREATED, JobStatus.RUNNING]:
-                            if await_first_row_thread.is_alive():
-                                continue
-                        else:  # job is finished/cancelled/failed
-                            time.sleep(2)
-                            # If job is done but the thread is still waiting for the first row, it means that the job
-                            # has no results at all.
-                            if await_first_row_thread.is_alive():
-                                print("No results returned")
-                                break
-                    print("Pulling query results...")
-                    await self.display_execution_result(execution_result, display_row_kind, pd_display_options)
-                    return
-                else:
-                    # if finished then return early even if the user interrupts after this
-                    # the actual invocation has already finished
-                    await_first_row_thread.join()
-                    print("Execution successful")
-                    return
-            except Py4JJavaError as err:
-                # consume timeout error or rethrow any other
-                if "java.util.concurrent.TimeoutException" not in str(err.java_exception):
-                    raise err
+        row_queue: queue.SimpleQueue[Optional[Row]] = queue.SimpleQueue()
+        fetcher = ExecutionResultFetcher(execution_result, row_queue)
+        fetcher.start()
 
+        if not display_results:
+            # The action should finish immediately so that we can block on it.
+            fetcher.wait()
+            print("Execution successful")
+            return
+        else:  # display results
+            print("Pulling query results...")
+            await self.display_execution_result(execution_result, row_queue, display_row_kind, pd_display_options)
+
+        # Kill the Flink job if query has been interrupted.
         if self.interrupted:
-            # await_first_row_thread will exit automatically once job is cancelled.
             job_client = execution_result.get_job_client()
             if job_client is not None:
                 print(f"Job cancelled {job_client.get_job_id()}")
@@ -495,13 +414,14 @@ class Integrations(Magics):
             else:
                 # interrupted and executed a stmt without a proper job (see the underlying execute_sql call)
                 print("Job interrupted")
-            # in either case return early
             return
 
         # usual happy path
         print("Execution successful")
 
-    async def display_execution_result(self, execution_result: TableResult, display_row_kind: bool,
+    async def display_execution_result(self, execution_result: TableResult,
+                                       row_queue: queue.SimpleQueue[Optional[Row]],
+                                       display_row_kind: bool,
                                        pd_display_options: Dict[str, Any]) -> pd.DataFrame:
         """
         Displays the execution result and returns a dataframe containing all the results.
@@ -517,55 +437,32 @@ class Integrations(Magics):
         result_kind = execution_result.get_result_kind()
 
         if result_kind == ResultKind.SUCCESS_WITH_CONTENT:
-            with execution_result.collect() as results:
-                row_queue: queue.SimpleQueue[Optional[Row]] = queue.SimpleQueue()
+            print("Results will be pulled from the job. You can interrupt any time to show partial results.")
+            print("Execution result will bind to `execution_result` variable.")
+            rows_counter = IntText(value=0, description="Loaded rows: ")
+            core_display(rows_counter)
+            display_handle = None
+            while not self.interrupted:
+                # Explicit await for the same reason as in `__internal_execute_sql`
+                await asyncio.sleep(self.async_wait_s)
+                try:
+                    result = row_queue.get(timeout=0.1)
+                    if result is None:  # None indicates that there will be no more results
+                        break
+                except queue.Empty:
+                    continue
 
-                # Waiting for the next result in iterator is a blocking action, so "Interrupt" button does not trigger
-                # any action until the next result comes. As a solution, there is a reader thread which puts results
-                # into a queue, which in turn is read by a "display" thread in a non-blocking way.
-                def row_reader() -> None:
-                    try:
-                        for result in results:
-                            row_queue.put(result)
-                        # None is a "poison pill"
-                        row_queue.put(None)
-                    except Py4JJavaError as e:
-                        # consume "job cancelled" error or rethrow any other
-                        if "org.apache.flink.runtime.client.JobCancellationException: Job was cancelled" not in str(e):
-                            print("Exception while reading results.", e)
-                    except Exception as e:  # noqa: B902
-                        print("Exception while reading results.", e)
-
-                row_reader_thread = threading.Thread(target=row_reader)
-                row_reader_thread.start()
-
-                print("Results will be pulled from the job. You can interrupt any time to show partial results.")
-                print("Execution result will bind to `execution_result` variable.")
-                rows_counter = IntText(value=0, description="Loaded rows: ")
-                core_display(rows_counter)
-                display_handle = None
-                while not self.interrupted:
-                    # Explicit await for the same reason as in `__internal_execute_sql`
-                    await asyncio.sleep(self.async_wait_s)
-                    try:
-                        result = row_queue.get(timeout=1.0)
-                        if result is None:  # None indicates that there will be no more results
-                            break
-                    except queue.Empty:
-                        continue
-
-                    res = list(result)
-                    if display_row_kind:
-                        res = [result.get_row_kind()] + res
-                    a_series = pd.Series(res, index=df.columns)
-                    df = df.append(a_series, ignore_index=True)
-                    rows_counter.value += 1
-                    if display_handle is None:
-                        display_handle = display.display(df, display_id=True)
-                    else:
-                        display_handle.update(df)
-
-        else:
+                res = list(result)
+                if display_row_kind:
+                    res = [result.get_row_kind()] + res
+                a_series = pd.Series(res, index=df.columns)
+                df = df.append(a_series, ignore_index=True)
+                rows_counter.value += 1
+                if display_handle is None:
+                    display_handle = display.display(df, display_id=True)
+                else:
+                    display_handle.update(df)
+        else:  # result_kind == ResultKind.SUCCESS
             series = pd.Series(
                 [pyflink_result_kind_to_string(result_kind)], index=df.columns
             )
