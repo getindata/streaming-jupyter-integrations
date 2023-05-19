@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Add `%flink_execute_sql_set` command which allows to run multiple inserts in statement set
+
 ## [0.13.5] - 2023-03-13
 
 ### Fixed

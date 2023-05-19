@@ -321,6 +321,39 @@ class Integrations(Magics):
 
     @cell_magic
     @magic_arguments()
+    @argument("--parallelism", "-p", type=int, help="Flink parallelism to use when running the SQL", required=False,
+              default=1)
+    def flink_execute_sql_set(self, line: str, cell: str) -> None:
+        args = parse_argstring(self.flink_execute_sql_set, line)
+        self.s_env.set_parallelism(args.parallelism)
+
+        if self.background_execution_in_progress:
+            self.__retract_user_as_something_is_executing_in_background()
+            return
+
+        stmt = self.__enrich_cell(cell)
+        self.___flink_execute_sql_set_internal(stmt)
+
+    @__interrupt_signal_decorator
+    def ___flink_execute_sql_set_internal(self, stmt: str) -> None:
+        task = self.__flink_execute_sql_set_internal(stmt)
+        print("This job runs in a background, please either wait or interrupt its execution before continuing")
+        self.background_execution_in_progress = True
+        self.deployment_bar.show_deployment_bar()
+        asyncio.create_task(task).add_done_callback(self.__handle_done)
+
+    async def __flink_execute_sql_set_internal(self, stmt: str) -> None:
+        print("Job starting...")
+
+        stmt_set = self.st_env.create_statement_set()
+        for insert in sqlparse.split(stmt):
+            stmt_set.add_insert_sql(insert)
+        execution_output = stmt_set.execute()
+        print("Job started")
+        await self.__pull_results(execution_output, False, False)
+
+    @cell_magic
+    @magic_arguments()
     @argument("--display-row-kind", help="Whether result row kind should be displayed", action="store_true")
     @argument("--parallelism", "-p", type=int, help="Flink parallelism to use when running the SQL", required=False,
               default=1)
