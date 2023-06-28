@@ -558,7 +558,7 @@ class Integrations(Magics):
                     if display_row_kind:
                         res = [result.get_row_kind()] + res
                     a_series = pd.Series(res, index=df.columns)
-                    df = df.append(a_series, ignore_index=True)
+                    df = pd.concat([df, pd.DataFrame.from_records([a_series])])
                     rows_counter.value += 1
                     if display_handle is None:
                         display_handle = display.display(df, display_id=True)
@@ -569,7 +569,7 @@ class Integrations(Magics):
             series = pd.Series(
                 [pyflink_result_kind_to_string(result_kind)], index=df.columns
             )
-            df = df.append(series, ignore_index=True)
+            df = pd.concat([df, pd.DataFrame.from_records([series])])
             display.display(df)
 
         self.shell.user_ns["execution_result"] = df
