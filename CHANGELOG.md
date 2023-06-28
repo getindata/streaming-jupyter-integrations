@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.1] - 2023-06-28
+
 ### Fixed
 
 -   Use pandas concat instead of deprecated append.
@@ -223,7 +225,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.1...HEAD
+
+[0.14.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.0...0.14.1
 
 [0.14.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.13.5...0.14.0
 
