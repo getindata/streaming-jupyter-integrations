@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Use pandas concat instead of deprecated append.
+
 ## [0.14.0] - 2023-05-19
 
 ### Added
