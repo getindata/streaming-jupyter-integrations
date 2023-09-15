@@ -9,11 +9,11 @@ import subprocess
 import sys
 import threading
 import time
+import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union, cast
 
 import nest_asyncio
-import pandas as pd
 import sqlparse
 import yaml
 from IPython import display
@@ -45,6 +45,14 @@ from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_metadata_query,
                         is_query)
 from .variable_substitution import CellContentFormatter
 from .yarn import find_session_jm_address
+
+# https://stackoverflow.com/questions/15777951/how-to-suppress-pandas-future-warning?rq=4
+# Warning to suppress:
+#   /opt/conda/lib/python3.8/site-packages/streaming_jupyter_integrations/magics.py:561: FutureWarning:
+#   In a future version, object-dtype columns with all-bool values will not be included in reductions with
+#   bool_only=True. Explicitly cast to bool dtype instead. df = pd.concat([df, pd.DataFrame.from_records([a_series])])
+warnings.simplefilter(action='ignore', category=FutureWarning)
+import pandas as pd  # noqa: E402
 
 
 @magics_class
