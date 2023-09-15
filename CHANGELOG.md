@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Search environment variables when resolving user variables.
+
 ## [0.14.1] - 2023-06-28
 
 ### Fixed
