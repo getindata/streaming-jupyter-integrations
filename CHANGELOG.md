@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Hide pandas FutureWarnings.
+
 ## [0.14.3] - 2023-09-18
 
 ### Fixed
