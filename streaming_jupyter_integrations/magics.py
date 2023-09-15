@@ -683,7 +683,7 @@ class Integrations(Magics):
 
     def __enrich_cell(self, cell: str) -> str:
         enriched_cell = CellContentFormatter(
-            cell, {**self.shell.user_ns, **self._secrets}
+            cell, {**os.environ, **self.shell.user_ns, **self._secrets}
         ).substitute_user_variables()
         joined_cell = inline_sql_in_cell(enriched_cell)
         return joined_cell
