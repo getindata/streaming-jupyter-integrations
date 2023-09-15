@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.2] - 2023-09-15
+
 ### Added
 
 -   Search environment variables when resolving user variables.
@@ -229,7 +231,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.1...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.2...HEAD
+
+[0.14.2]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.1...0.14.2
 
 [0.14.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.0...0.14.1
 
