@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fix pandas DataFrame row numbers.
+
 ## [0.14.2] - 2023-09-15
 
 ### Added
