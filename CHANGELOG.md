@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.3] - 2023-09-18
+
 ### Fixed
 
 -   Fix pandas DataFrame row numbers.
@@ -235,7 +237,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.2...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.3...HEAD
+
+[0.14.3]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.2...0.14.3
 
 [0.14.2]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.1...0.14.2
 
