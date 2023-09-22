@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.4] - 2023-09-22
+
 ### Fixed
 
 -   Hide pandas FutureWarnings.
@@ -241,7 +243,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.3...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.4...HEAD
+
+[0.14.4]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.3...0.14.4
 
 [0.14.3]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.2...0.14.3
 
