@@ -801,9 +801,9 @@ class Integrations(Magics):
     def flink_show_table_tree(self, line: str) -> Any:
         args = parse_argstring(self.flink_show_table_tree, line)
         widget_type = args.type
-        self.s_env.set_parallelism(args.parallelism)
+        parallelism = args.parallelism
 
-        schema = SchemaLoader(self.st_env).get_schema()
+        schema = SchemaLoader(self.st_env, parallelism).get_schema()
         if widget_type == "tree":
             return IPyTreeSchemaBuilder().build(schema)
         elif widget_type == "json":

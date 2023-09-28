@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
 from IPython.display import JSON
@@ -48,8 +49,9 @@ class SchemaRoot:
 
 
 class SchemaLoader:
-    def __init__(self, st_env: StreamTableEnvironment):
+    def __init__(self, st_env: StreamTableEnvironment, parallelism: int):
         self.st_env = st_env
+        self.parallelism = parallelism
 
     def get_schema(self) -> SchemaRoot:
         # Save name of the current catalog and database. In order to build tables hierarchy, we need to change
@@ -58,8 +60,9 @@ class SchemaLoader:
         current_catalog_name = self.st_env.execute_sql("SHOW CURRENT CATALOG").collect().next()[0]
         current_database_name = self.st_env.execute_sql("SHOW CURRENT DATABASE").collect().next()[0]
 
-        catalogs = self.st_env.execute_sql("SHOW CATALOGS").collect()
-        catalogs_tree = [self._build_catalog(catalog) for catalog in catalogs]
+        with ThreadPoolExecutor(self.parallelism) as executor:
+            catalogs = self.st_env.execute_sql("SHOW CATALOGS").collect()
+            catalogs_tree = [executor.submit(self._build_catalog, catalog) for catalog in catalogs]
 
         self.st_env.execute_sql(f"USE CATALOG `{current_catalog_name}`")
         self.st_env.execute_sql(f"USE `{current_database_name}`")
@@ -69,26 +72,29 @@ class SchemaLoader:
     def _build_catalog(self, catalog: Row) -> SchemaCatalog:
         catalog_name = catalog[0]
         self.st_env.execute_sql(f"USE CATALOG `{catalog_name}`")
-        databases = self.st_env.execute_sql("SHOW DATABASES").collect()
-        tree_databases = [self._build_database(catalog_name, database) for database in databases]
+
+        with ThreadPoolExecutor(self.parallelism) as executor:
+            databases = self.st_env.execute_sql("SHOW DATABASES").collect()
+            tree_databases = [executor.submit(self._build_database, catalog_name, database) for database in databases]
         return SchemaCatalog(catalog_name, tree_databases)
 
     def _build_database(self, catalog_name: str, database: Row) -> SchemaDatabase:
         database_name = database[0]
         self.st_env.execute_sql(f"USE `{database_name}`")
 
-        tables = [table[0] for table in self.st_env.execute_sql("SHOW TABLES").collect()]
-        views = [view[0] for view in self.st_env.execute_sql("SHOW VIEWS").collect()]
-        tree_tables = [self._build_table(catalog_name, database_name, table, table in views) for table in tables]
-
-        functions = self.st_env.execute_sql("SHOW USER FUNCTIONS").collect()
-        tree_functions = [SchemaFunction(function[0]) for function in functions]
+        with ThreadPoolExecutor(self.parallelism) as executor:
+            tables = [table[0] for table in self.st_env.execute_sql("SHOW TABLES").collect()]
+            views = [view[0] for view in self.st_env.execute_sql("SHOW VIEWS").collect()]
+            tree_tables = [executor.submit(self._build_table, catalog_name, database_name, table, table in views) for table in tables]
+            functions = self.st_env.execute_sql("SHOW USER FUNCTIONS").collect()
+            tree_functions = [SchemaFunction(function[0]) for function in functions]
 
         return SchemaDatabase(database_name, tree_tables, tree_functions)
 
     def _build_table(self, catalog_name: str, database_name: str, table_name: str, is_view: bool) -> SchemaTable:
-        columns = self.st_env.execute_sql(f"DESCRIBE `{catalog_name}`.`{database_name}`.`{table_name}`").collect()
-        tree_columns = [self._build_column(column) for column in columns]
+        with ThreadPoolExecutor(self.parallelism) as executor:
+            columns = self.st_env.execute_sql(f"DESCRIBE `{catalog_name}`.`{database_name}`.`{table_name}`").collect()
+            tree_columns = [executor.submit(self._build_column, column) for column in columns]
         return SchemaTable(table_name, tree_columns, is_view)
 
     def _build_column(self, column: Row) -> SchemaColumn:
