@@ -82,7 +82,8 @@ class SchemaLoader:
         with ThreadPoolExecutor(self.parallelism) as executor:
             tables = [table[0] for table in self.st_env.execute_sql("SHOW TABLES").collect()]
             views = [view[0] for view in self.st_env.execute_sql("SHOW VIEWS").collect()]
-            table_futures = [executor.submit(self._build_table, catalog_name, database_name, table, table in views) for table in tables]
+            table_futures = [executor.submit(self._build_table, catalog_name, database_name, table, table in views) for
+                             table in tables]
             tree_tables = [future.result() for future in as_completed(table_futures)]
             functions = self.st_env.execute_sql("SHOW USER FUNCTIONS").collect()
             tree_functions = [SchemaFunction(function[0]) for function in functions]
