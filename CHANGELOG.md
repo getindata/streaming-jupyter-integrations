@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Improved performance of flink_show_table_tree command by parallelism.
+
 ## [0.14.4] - 2023-09-22
 
 ### Fixed
