@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.5] - 2023-10-03
+
 ### Fixed
 
 -   Improved performance of flink_show_table_tree command by parallelism.
@@ -247,7 +249,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.4...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.5...HEAD
+
+[0.14.5]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.4...0.14.5
 
 [0.14.4]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.3...0.14.4
 
