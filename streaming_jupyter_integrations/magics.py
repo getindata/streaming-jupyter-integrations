@@ -796,11 +796,15 @@ class Integrations(Magics):
     @line_magic
     @magic_arguments()
     @argument("-t", "--type", type=str, default="tree", help="The widget type used to display schemas.")
+    @argument("--parallelism", "-p", type=int, help="Flink parallelism to use when retrieving the table tree.",
+              required=False,
+              default=5)
     def flink_show_table_tree(self, line: str) -> Any:
         args = parse_argstring(self.flink_show_table_tree, line)
         widget_type = args.type
+        parallelism = args.parallelism
 
-        schema = SchemaLoader(self.st_env).get_schema()
+        schema = SchemaLoader(self.st_env, parallelism).get_schema()
         if widget_type == "tree":
             return IPyTreeSchemaBuilder().build(schema)
         elif widget_type == "json":

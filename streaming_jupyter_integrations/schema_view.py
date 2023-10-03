@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional
 
 from IPython.display import JSON
@@ -48,8 +49,9 @@ class SchemaRoot:
 
 
 class SchemaLoader:
-    def __init__(self, st_env: StreamTableEnvironment):
+    def __init__(self, st_env: StreamTableEnvironment, parallelism: int):
         self.st_env = st_env
+        self.parallelism = parallelism
 
     def get_schema(self) -> SchemaRoot:
         # Save name of the current catalog and database. In order to build tables hierarchy, we need to change
@@ -77,12 +79,14 @@ class SchemaLoader:
         database_name = database[0]
         self.st_env.execute_sql(f"USE `{database_name}`")
 
-        tables = [table[0] for table in self.st_env.execute_sql("SHOW TABLES").collect()]
-        views = [view[0] for view in self.st_env.execute_sql("SHOW VIEWS").collect()]
-        tree_tables = [self._build_table(catalog_name, database_name, table, table in views) for table in tables]
-
-        functions = self.st_env.execute_sql("SHOW USER FUNCTIONS").collect()
-        tree_functions = [SchemaFunction(function[0]) for function in functions]
+        with ThreadPoolExecutor(self.parallelism) as executor:
+            tables = [table[0] for table in self.st_env.execute_sql("SHOW TABLES").collect()]
+            views = [view[0] for view in self.st_env.execute_sql("SHOW VIEWS").collect()]
+            table_futures = [executor.submit(self._build_table, catalog_name, database_name, table, table in views) for
+                             table in tables]
+            tree_tables = [future.result() for future in as_completed(table_futures)]
+            functions = self.st_env.execute_sql("SHOW USER FUNCTIONS").collect()
+            tree_functions = [SchemaFunction(function[0]) for function in functions]
 
         return SchemaDatabase(database_name, tree_tables, tree_functions)
 
