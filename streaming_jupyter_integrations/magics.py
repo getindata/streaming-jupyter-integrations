@@ -58,6 +58,7 @@ import pandas as pd  # noqa: E402
 @magics_class
 class Integrations(Magics):
 
+    """Test change"""
     def __init__(self, shell: Any):
         super(Integrations, self).__init__(shell)
         self._secrets: Dict[str, str] = {}
