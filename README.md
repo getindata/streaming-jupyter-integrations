@@ -181,6 +181,27 @@ the pipeline does not end with `.execute()`, the execution is triggered by the J
 
 ## Local development
 
+There are currently 2 options for running `streaming_jupyter_integrations` for development. We can either
+use a Docker image or install it on our machine.
+
+### Docker image
+
+You can build a `Docker` image of `Jupyter Notebooks` by running the command below.
+It will contain functionality that was developed in this project.
+```bash
+docker build --tag streaming_jupyter_integrations_image .
+```
+
+After the image is built, we can run it using this command.
+```bash
+docker run --name streaming_jupyter_integrations -p 8888:8888 streaming_jupyter_integrations_image
+```
+
+After that we should be able to reach our Jupyterhub running on Docker under:
+http://127.0.0.1:8888/
+
+### Local installation
+
 Note: You will need NodeJS to build the extension package.
 
 The `jlpm` command is JupyterLab's pinned version of
@@ -199,6 +220,8 @@ jupyter labextension develop . --overwrite
 # Rebuild extension Typescript source after making changes
 jlpm build
 ```
+
+### pre-commit
 
 The project uses [pre-commit](https://pre-commit.com/) hooks to ensure code quality, mostly by linting.
 To use it, [install pre-commit](https://pre-commit.com/#install) and then run
