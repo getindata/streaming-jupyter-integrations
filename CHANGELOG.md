@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Support Flink 1.18
+
 ## [0.14.5] - 2023-10-03
 
 ### Fixed

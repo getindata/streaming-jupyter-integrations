@@ -7,7 +7,7 @@ types-PyYAML~=6.0.0
 yarn-api-client~=1.0.0
 
 ipywidgets
-apache-flink>=1.15,<1.17
+apache-flink>=1.15,<=1.18
 pandas
 py4j
 requests
