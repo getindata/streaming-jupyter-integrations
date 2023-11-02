@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.15.0] - 2023-11-02
+
 ### Added
 
 -   Support Flink 1.18
@@ -253,7 +255,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.5...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.15.0...HEAD
+
+[0.15.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.5...0.15.0
 
 [0.14.5]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.4...0.14.5
 
