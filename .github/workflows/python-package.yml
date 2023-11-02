@@ -43,3 +43,9 @@ jobs:
       - name: Wheel
         run: |
           python setup.py sdist
+
+      - name: Build docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: false
+          tags: getindata/streaming-jupyter-integrations:latest
