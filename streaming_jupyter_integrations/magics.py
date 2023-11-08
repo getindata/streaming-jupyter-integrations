@@ -41,8 +41,7 @@ from .reflection import get_method_names_for
 from .schema_view import (IPyTreeSchemaBuilder, JsonTreeSchemaBuilder,
                           SchemaLoader)
 from .sql_syntax_highlighting import SQLSyntaxHighlighting
-from .sql_utils import (inline_sql_in_cell, is_dml, is_dql, is_metadata_query,
-                        is_query)
+from .sql_utils import is_dml, is_dql, is_metadata_query, is_query
 from .variable_substitution import CellContentFormatter
 from .yarn import find_session_jm_address
 
@@ -693,8 +692,7 @@ class Integrations(Magics):
         enriched_cell = CellContentFormatter(
             cell, {**os.environ, **self.shell.user_ns, **self._secrets}
         ).substitute_user_variables()
-        joined_cell = inline_sql_in_cell(enriched_cell)
-        return joined_cell
+        return enriched_cell
 
     def __flink_execute_sql_file(self, path: Union[str, os.PathLike[str]], display_row_kind: bool) -> None:
         if self.background_execution_in_progress:

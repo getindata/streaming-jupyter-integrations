@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Do not inline SQL queries. Error message shows correct line and column.
+
 ## [0.15.0] - 2023-11-02
 
 ### Added
