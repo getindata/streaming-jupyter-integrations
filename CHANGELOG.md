@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.15.1] - 2023-11-09
+
+### Added
+
+-   Do not inline SQL queries. Error message shows correct line and column.
+
 ## [0.15.0] - 2023-11-02
 
 ### Added
@@ -255,7 +261,9 @@
 
 -   First release
 
-[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.15.0...HEAD
+[Unreleased]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.15.1...HEAD
+
+[0.15.1]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.15.0...0.15.1
 
 [0.15.0]: https://github.com/getindata/streaming-jupyter-integrations/compare/0.14.5...0.15.0
 
