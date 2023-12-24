@@ -4,6 +4,21 @@
 [![PyPI version](https://badge.fury.io/py/streaming-jupyter-integrations.svg)](https://pypi.org/project/streaming-jupyter-integrations/)
 [![Downloads](https://pepy.tech/badge/streaming_jupyter_integrations)](https://pepy.tech/badge/streaming_jupyter_integrations)
 
+- [Streaming Jupyter Integrations](#streaming-jupyter-integrations)
+    * [Installation](#installation)
+    * [Usage](#usage)
+        + [Execution mode](#execution-mode)
+        + [Execution target](#execution-target)
+            - [Local execution target](#local-execution-target)
+            - [Remote execution target](#remote-execution-target)
+            - [YARN session execution target](#yarn-session-execution-target)
+    * [Variables](#variables)
+        + [`%%flink_execute` command](#---flink-execute--command)
+    * [Local development](#local-development)
+    * [Known issues](#known-issues)
+        + [FLINK-23020](#flink-23020)
+---
+
 # Streaming Jupyter Integrations
 
 Streaming Jupyter Integrations project includes a set of magics for interactively running _Flink SQL_  jobs in [Jupyter](https://jupyter.org/) Notebooks
@@ -229,3 +244,12 @@ To use it, [install pre-commit](https://pre-commit.com/#install) and then run
 pre-commit install --install-hooks
 ```
 From that moment, it will lint the files you have modified on every commit attempt.
+
+---
+
+## Known issues
+
+### FLINK-23020
+
+The integrations need [FLINK-23020](https://issues.apache.org/jira/browse/FLINK-23020) fix to work correctly. Check
+[this instruction](/flink/flink-table-planner-loader/README.md) to learn how to solve the problem.
